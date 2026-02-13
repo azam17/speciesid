@@ -1,0 +1,96 @@
+accession	sample_name	category	species_expected	notes
+SRR23225544	OPSONX_001	mock	mixture	Mock mixture with known composition
+SRR23225543	OPSONX_002	mock	mixture	Mock mixture with known composition
+SRR23225532	OPSONX_003a	mock	mixture	Mock mixture replicate a
+SRR23225521	OPSONX_003b	mock	mixture	Mock mixture replicate b
+SRR23225510	OPSONX_004	mock	mixture	Mock mixture with known composition
+SRR23225499	OPSONX_005	mock	mixture	Mock mixture with known composition
+SRR23225488	OPSONX_006	mock	mixture	Mock mixture with known composition
+SRR23225477	OPSONX_007a	mock	mixture	Mock mixture replicate a
+SRR23225466	OPSONX_007b	mock	mixture	Mock mixture replicate b
+SRR23225455	OPSONX_008	mock	mixture	Mock mixture with known composition
+SRR23225542	OPSONX_009	proficiency	mixture	Proficiency test sample
+SRR23225541	OPSONX_010	proficiency	mixture	Proficiency test sample
+SRR23225540	OPSONX_011a	proficiency	mixture	Proficiency test replicate a
+SRR23225539	OPSONX_011b	proficiency	mixture	Proficiency test replicate b
+SRR23225538	OPSONX_012	proficiency	mixture	Proficiency test sample
+SRR23225537	OPSONX_013	real_product	unknown	Meat product from OPSON X operation
+SRR23225536	OPSONX_014	real_product	unknown	Meat product from OPSON X operation
+SRR23225535	OPSONX_015	real_product	unknown	Meat product from OPSON X operation
+SRR23225534	OPSONX_016	real_product	unknown	Meat product from OPSON X operation
+SRR23225533	OPSONX_017	real_product	unknown	Meat product from OPSON X operation
+SRR23225531	OPSONX_019	real_product	unknown	Meat product from OPSON X operation
+SRR23225530	OPSONX_020	real_product	unknown	Meat product from OPSON X operation
+SRR23225529	OPSONX_021	real_product	unknown	Meat product from OPSON X operation
+SRR23225528	OPSONX_022	real_product	unknown	Meat product from OPSON X operation
+SRR23225527	OPSONX_023	real_product	unknown	Meat product from OPSON X operation
+SRR23225526	OPSONX_024	real_product	unknown	Meat product from OPSON X operation
+SRR23225525	OPSONX_025	real_product	unknown	Meat product from OPSON X operation
+SRR23225524	OPSONX_026a	real_product	unknown	Meat product replicate a
+SRR23225523	OPSONX_026b	real_product	unknown	Meat product replicate b
+SRR23225522	OPSONX_027	real_product	unknown	Meat product from OPSON X operation
+SRR23225520	OPSONX_028a	real_product	unknown	Meat product replicate a
+SRR23225519	OPSONX_028b	real_product	unknown	Meat product replicate b
+SRR23225518	OPSONX_029	real_product	unknown	Meat product from OPSON X operation
+SRR23225517	OPSONX_030	real_product	unknown	Meat product from OPSON X operation
+SRR23225516	OPSONX_031	real_product	unknown	Meat product from OPSON X operation
+SRR23225515	OPSONX_032	real_product	unknown	Meat product from OPSON X operation
+SRR23225514	OPSONX_033	real_product	unknown	Meat product from OPSON X operation
+SRR23225513	OPSONX_034	real_product	unknown	Meat product from OPSON X operation
+SRR23225512	OPSONX_035	real_product	unknown	Meat product from OPSON X operation
+SRR23225511	OPSONX_036	real_product	unknown	Meat product from OPSON X operation
+SRR23225509	OPSONX_037	real_product	unknown	Meat product from OPSON X operation
+SRR23225508	OPSONX_038	real_product	unknown	Meat product from OPSON X operation
+SRR23225507	OPSONX_039	real_product	unknown	Meat product from OPSON X operation
+SRR23225506	OPSONX_040	real_product	unknown	Meat product from OPSON X operation
+SRR23225505	OPSONX_041a	real_product	unknown	Meat product replicate a
+SRR23225504	OPSONX_041b	real_product	unknown	Meat product replicate b
+SRR23225503	OPSONX_042	real_product	unknown	Meat product from OPSON X operation
+SRR23225502	OPSONX_043	real_product	unknown	Meat product from OPSON X operation
+SRR23225501	OPSONX_044	real_product	unknown	Meat product from OPSON X operation
+SRR23225500	OPSONX_045	real_product	unknown	Meat product from OPSON X operation
+SRR23225498	OPSONX_046	real_product	unknown	Meat product from OPSON X operation
+SRR23225497	OPSONX_047	real_product	unknown	Meat product from OPSON X operation
+SRR23225496	OPSONX_048	real_product	unknown	Meat product from OPSON X operation
+SRR23225495	OPSONX_049	real_product	unknown	Meat product from OPSON X operation
+SRR23225494	OPSONX_050	real_product	unknown	Meat product from OPSON X operation
+SRR23225493	OPSONX_051	real_product	unknown	Meat product from OPSON X operation
+SRR23225492	OPSONX_052	real_product	unknown	Meat product from OPSON X operation
+SRR23225491	OPSONX_053	real_product	unknown	Meat product from OPSON X operation
+SRR23225490	OPSONX_054	real_product	unknown	Meat product from OPSON X operation
+SRR23225489	OPSONX_055	real_product	unknown	Meat product from OPSON X operation
+SRR23225487	OPSONX_056	real_product	unknown	Meat product from OPSON X operation
+SRR23225486	OPSONX_057	real_product	unknown	Meat product from OPSON X operation
+SRR23225485	OPSONX_058	real_product	unknown	Meat product from OPSON X operation
+SRR23225484	OPSONX_059a	real_product	unknown	Meat product replicate a
+SRR23225483	OPSONX_059b	real_product	unknown	Meat product replicate b
+SRR23225482	OPSONX_060	real_product	unknown	Meat product from OPSON X operation
+SRR23225481	OPSONX_061	real_product	unknown	Meat product from OPSON X operation
+SRR23225480	OPSONX_062	real_product	unknown	Meat product from OPSON X operation
+SRR23225479	OPSONX_063	real_product	unknown	Meat product from OPSON X operation
+SRR23225478	OPSONX_064	real_product	unknown	Meat product from OPSON X operation
+SRR23225476	OPSONX_065	real_product	unknown	Meat product from OPSON X operation
+SRR23225475	OPSONX_066	real_product	unknown	Meat product from OPSON X operation
+SRR23225474	OPSONX_067	real_product	unknown	Meat product from OPSON X operation
+SRR23225473	OPSONX_068	real_product	unknown	Meat product from OPSON X operation
+SRR23225472	OPSONX_069	real_product	unknown	Meat product from OPSON X operation
+SRR23225471	OPSONX_070a	real_product	unknown	Meat product replicate a
+SRR23225470	OPSONX_070b	real_product	unknown	Meat product replicate b
+SRR23225469	OPSONX_071	real_product	unknown	Meat product from OPSON X operation
+SRR23225468	OPSONX_078a	real_product	unknown	Meat product replicate a
+SRR23225467	OPSONX_078b	real_product	unknown	Meat product replicate b
+SRR23225465	OPSONX_086	real_product	unknown	Meat product from OPSON X operation
+SRR23225464	OPSONX_087	real_product	unknown	Meat product from OPSON X operation
+SRR23225463	OPSONX_088	real_product	unknown	Meat product from OPSON X operation
+SRR23225462	OPSONX_089	real_product	unknown	Meat product from OPSON X operation
+SRR23225461	OPSONX_090	real_product	unknown	Meat product from OPSON X operation
+SRR23225460	OPSONX_095	real_product	unknown	Meat product from OPSON X operation
+SRR23225459	OPSONX_096	real_product	unknown	Meat product from OPSON X operation
+SRR23225458	OPSONX_097	real_product	unknown	Meat product from OPSON X operation
+SRR23225457	OPSONX_098	real_product	unknown	Meat product from OPSON X operation
+SRR23225456	OPSONX_099	real_product	unknown	Meat product from OPSON X operation
+SRR23225454	OPSONX_100	real_product	unknown	Meat product from OPSON X operation
+SRR23225453	OPSONX_101	real_product	unknown	Meat product from OPSON X operation
+SRR23225452	OPSONX_102	real_product	unknown	Meat product from OPSON X operation
+SRR23225451	OPSONX_103	real_product	unknown	Meat product from OPSON X operation
+SRR23225450	OPSONX_104	real_product	unknown	Meat product from OPSON X operation

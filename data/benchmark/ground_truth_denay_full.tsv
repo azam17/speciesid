@@ -1,0 +1,80 @@
+accession	sample_name	category	species_expected	notes
+ERR10436160	Spike_H1	spike	Gallus_gallus	Single-species chicken control (Huhn)
+ERR10436161	Spike_P1	spike	Meleagris_gallopavo	Single-species turkey control (Pute)
+ERR10436162	Spike_R1	spike	Bos_taurus	Single-species cattle control (Rind)
+ERR10436166	Spike_S1	spike	Sus_scrofa	Single-species pig control (Schwein)
+ERR10436167	Spike_Sf1	spike	Ovis_aries	Single-species sheep control (Schaf)
+ERR10436163	Spike_Reh1	spike_outofdb	Capreolus_capreolus	Roe deer - NOT in SpeciesID database
+ERR10436164	Spike_RW1_rep1	spike_outofdb	Cervus_elaphus	Red deer - NOT in SpeciesID database
+ERR10436165	Spike_RW1_rep2	spike_outofdb	Cervus_elaphus	Red deer replicate - NOT in SpeciesID database
+ERR10436152	Spike_1_rep1	spike_unknown	unknown	Numbered spike - species from results
+ERR10436153	Spike_1_rep2	spike_unknown	unknown	Numbered spike replicate
+ERR10436154	Spike_3_rep1	spike_unknown	unknown	Numbered spike - species from results
+ERR10436155	Spike_3_rep2	spike_unknown	unknown	Numbered spike replicate
+ERR10436156	Spike_4_rep1	spike_unknown	unknown	Numbered spike - species from results
+ERR10436157	Spike_4_rep2	spike_unknown	unknown	Numbered spike replicate
+ERR10436158	Spike_5_rep1	spike_unknown	unknown	Numbered spike - species from results
+ERR10436159	Spike_5_rep2	spike_unknown	unknown	Numbered spike replicate
+ERR10436115	LGC7240_rep1	lgc	Bos_taurus,Equus_caballus	99% beef + 1% horse (w/w)
+ERR10436116	LGC7240_rep2	lgc	Bos_taurus,Equus_caballus	99% beef + 1% horse replicate
+ERR10436117	LGC7242_rep1	lgc	Bos_taurus,Sus_scrofa	99% beef + 1% pork (w/w)
+ERR10436118	LGC7242_rep2	lgc	Bos_taurus,Sus_scrofa	99% beef + 1% pork replicate
+ERR10436119	LGC7244_rep1	lgc	Ovis_aries,Gallus_gallus	99% sheep + 1% chicken (w/w)
+ERR10436120	LGC7244_rep2	lgc	Ovis_aries,Gallus_gallus	99% sheep + 1% chicken replicate
+ERR10436121	LGC7245	lgc	Ovis_aries,Gallus_gallus	95% sheep + 5% chicken (w/w)
+ERR10436122	LGC7246	lgc	Ovis_aries,Meleagris_gallopavo	99% sheep + 1% turkey (w/w)
+ERR10436123	LGC7247	lgc	Ovis_aries,Meleagris_gallopavo	95% sheep + 5% turkey (w/w)
+ERR10436124	LGC7248	lgc	Ovis_aries,Bos_taurus	99% sheep + 1% beef (w/w)
+ERR10436125	LGC7249	lgc	Ovis_aries,Bos_taurus	95% sheep + 5% beef (w/w)
+ERR10436102	Equiden_2013_5	equiden	mixture	Equine species mixture
+ERR10436103	Equiden_2013_8	equiden	mixture	Equine species mixture
+ERR10436108	Gemisch-1-2020	gemisch	mixture	Multi-species mixture
+ERR10436109	Gemisch-3-2020	gemisch	mixture	Multi-species mixture
+ERR10436110	Gemisch-4-2020	gemisch	mixture	Multi-species mixture
+ERR10436111	Gemisch-6-2020	gemisch	mixture	Multi-species mixture
+ERR10436112	Gemisch-7-2020	gemisch	mixture	Multi-species mixture
+ERR10436113	Gemisch-8-2020	gemisch	mixture	Multi-species mixture
+ERR10436114	Gemisch-9-2020	gemisch	mixture	Multi-species mixture
+ERR10436095	DLA44_2019_1	proficiency	mixture	DLA proficiency test sample
+ERR10436096	DLA44_2019_3	proficiency	mixture	DLA proficiency test sample
+ERR10436097	DLA45_2019_1	proficiency	mixture	DLA proficiency test sample
+ERR10436098	DLA45_2019_2	proficiency	mixture	DLA proficiency test sample
+ERR10436099	DLA45_2019_3	proficiency	mixture	DLA proficiency test sample
+ERR10436100	DLA45_2019_4	proficiency	mixture	DLA proficiency test sample
+ERR10436101	DLAptAUS2_2020_3.1	proficiency	mixture	DLA proficiency test sample
+ERR10436133	LVU-2018-A1-2	proficiency	mixture	LVU proficiency test 2018
+ERR10436134	LVU-2018-A2	proficiency	mixture	LVU proficiency test 2018
+ERR10436135	LVU-2018-B1	proficiency	mixture	LVU proficiency test 2018
+ERR10436136	LVU-2018-B2	proficiency	mixture	LVU proficiency test 2018
+ERR10436137	LVU-2018-C1	proficiency	mixture	LVU proficiency test 2018
+ERR10436138	LVU-2018-C2	proficiency	mixture	LVU proficiency test 2018
+ERR10436139	LVU-2020-A	proficiency	mixture	LVU proficiency test 2020
+ERR10436140	LVU-2020-A-2	proficiency	mixture	LVU proficiency test 2020 replicate
+ERR10436141	LVU-2020-B	proficiency	mixture	LVU proficiency test 2020
+ERR10436142	LVU-2020-B-2	proficiency	mixture	LVU proficiency test 2020 replicate
+ERR10436143	LVU-2020-C	proficiency	mixture	LVU proficiency test 2020
+ERR10436144	LVU-2020-C-2	proficiency	mixture	LVU proficiency test 2020 replicate
+ERR10436104	Exoten_1_rep1	exoten	exotic_species	Exotic species sample (likely out of DB)
+ERR10436105	Exoten_1_rep2	exoten	exotic_species	Exotic species replicate
+ERR10436106	Exoten_2_rep1	exoten	exotic_species	Exotic species sample (likely out of DB)
+ERR10436107	Exoten_2_rep2	exoten	exotic_species	Exotic species replicate
+ERR10436126	Lippold_2013_A	lippold	mixture	Boiled sausage, complex multi-species
+ERR10436127	Lippold_2019_A	lippold	mixture	Boiled sausage, complex multi-species
+ERR10436128	Lippold_2019_B	lippold	mixture	Boiled sausage, complex multi-species
+ERR10436129	Lippold_2021_A_rep1	lippold	mixture	Boiled sausage replicate
+ERR10436130	Lippold_2021_A_rep2	lippold	mixture	Boiled sausage replicate
+ERR10436131	Lippold_2021_C_rep1	lippold	mixture	Boiled sausage replicate
+ERR10436132	Lippold_2021_C_rep2	lippold	mixture	Boiled sausage replicate
+ERR10436145	p64_2020_20	real_product	unknown	Market meat product sample
+ERR10436146	p64_2020_21	real_product	unknown	Market meat product sample
+ERR10436147	p64_2020_26	real_product	unknown	Market meat product sample
+ERR10436148	p64_2020_28_rep1	real_product	unknown	Market meat product replicate
+ERR10436149	p64_2020_28_rep2	real_product	unknown	Market meat product replicate
+ERR10436150	p64_2020_34_rep1	real_product	unknown	Market meat product replicate
+ERR10436151	p64_2020_34_rep2	real_product	unknown	Market meat product replicate
+ERR10436089	2022-0266899A	real_product	unknown	2022 analysis sample
+ERR10436090	2022-0266899B	real_product	unknown	2022 analysis sample replicate
+ERR10436091	2022-0266900A	real_product	unknown	2022 analysis sample
+ERR10436092	2022-0266900B	real_product	unknown	2022 analysis sample replicate
+ERR10436093	2022-0266901A	real_product	unknown	2022 analysis sample
+ERR10436094	2022-0266901B	real_product	unknown	2022 analysis sample replicate

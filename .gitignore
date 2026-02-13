@@ -1,0 +1,46 @@
+# Build artifacts
+build/
+*.o
+halalseq
+speciesid
+*.app
+HalalSeq.app/
+SpeciesID.app/
+
+# Database and index files (generated)
+*.db
+*.idx
+*.idx.bak
+
+# Data files (large, downloaded at runtime)
+data/benchmark/*.fastq
+data/benchmark/opsonx/
+*.fastq
+*.fastq.gz
+*.fq
+!test_sample.fq
+!meat_mixture_5k.fq
+
+# macOS
+.DS_Store
+*~$*
+
+# Node (used for some dev tooling)
+node_modules/
+package-lock.json
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary
+/tmp/
+*.tmp
+
+# Word doc backups
+~$*.docx
+
+# Claude Code
+.claude/

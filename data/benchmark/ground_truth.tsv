@@ -1,0 +1,23 @@
+accession	sample_name	category	species_expected	notes
+ERR10436160	Spike_H1	spike	Gallus_gallus	Single-species chicken control (Huhn)
+ERR10436161	Spike_P1	spike	Meleagris_gallopavo	Single-species turkey control (Pute)
+ERR10436162	Spike_R1	spike	Bos_taurus	Single-species cattle control (Rind)
+ERR10436166	Spike_S1	spike	Sus_scrofa	Single-species pig control (Schwein)
+ERR10436167	Spike_Sf1	spike	Ovis_aries	Single-species sheep control (Schaf)
+ERR10436163	Spike_Reh1	spike_outofdb	Capreolus_capreolus	Roe deer - NOT in SpeciesID database
+ERR10436164	Spike_RW1_rep1	spike_outofdb	Cervus_elaphus	Red deer - NOT in SpeciesID database
+ERR10436152	Spike_1_rep1	spike_unknown	unknown	Numbered spike - species TBD from results
+ERR10436154	Spike_3_rep1	spike_unknown	unknown	Numbered spike - species TBD from results
+ERR10436156	Spike_4_rep1	spike_unknown	unknown	Numbered spike - species TBD from results
+ERR10436158	Spike_5_rep1	spike_unknown	unknown	Numbered spike - species TBD from results
+ERR10436115	LGC7240_rep1	lgc	Bos_taurus,Equus_caballus	LGC certified reference: beef + horse
+ERR10436117	LGC7242_rep1	lgc	Bos_taurus,Sus_scrofa	LGC certified reference: beef + pork
+ERR10436119	LGC7244_rep1	lgc	mixture_certified	LGC certified reference (composition TBD)
+ERR10436121	LGC7245	lgc	mixture_certified	LGC certified reference (composition TBD)
+ERR10436122	LGC7246	lgc	mixture_certified	LGC certified reference (composition TBD)
+ERR10436102	Equiden_2013_5	equiden	Equus_caballus,Equus_asinus	Equine species mixture expected
+ERR10436103	Equiden_2013_8	equiden	Equus_caballus,Equus_asinus	Equine species mixture expected
+ERR10436108	Gemisch-1-2020	gemisch	mixture	Multi-species mixture (qualitative only)
+ERR10436109	Gemisch-3-2020	gemisch	mixture	Multi-species mixture (qualitative only)
+ERR10436110	Gemisch-4-2020	gemisch	mixture	Multi-species mixture (qualitative only)
+ERR10436111	Gemisch-6-2020	gemisch	mixture	Multi-species mixture (qualitative only)
