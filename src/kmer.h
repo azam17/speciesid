@@ -54,4 +54,7 @@ void kmer_set_add_seq(kmer_set_t *ks, const char *seq, int len);
 int kmer_set_contains(const kmer_set_t *ks, uint64_t h);
 double kmer_set_containment(const char *query, int qlen, const kmer_set_t *ref, int k);
 
+/* Remove all k-mers from 'ks' that appear in 'other'. Returns number removed. */
+int kmer_set_subtract(kmer_set_t *ks, const kmer_set_t *other);
+
 #endif /* SPECIESID_KMER_H */

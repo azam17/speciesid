@@ -174,3 +174,18 @@ double kmer_set_containment(const char *query, int qlen, const kmer_set_t *ref, 
     }
     return total > 0 ? (double)found / (double)total : 0.0;
 }
+
+int kmer_set_subtract(kmer_set_t *ks, const kmer_set_t *other) {
+    int removed = 0;
+    khint_t k;
+    for (k = kh_begin(ks->h); k != kh_end(ks->h); ++k) {
+        if (!kh_exist(ks->h, k)) continue;
+        uint64_t key = kh_key(ks->h, k);
+        if (kmer_set_contains(other, key)) {
+            kh_del(kmer64, ks->h, k);
+            removed++;
+        }
+    }
+    ks->n_kmers -= removed;
+    return removed;
+}

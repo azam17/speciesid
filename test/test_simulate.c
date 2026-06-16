@@ -47,14 +47,10 @@ static void test_simulate_basic(void) {
     sim_result_t *sr = simulate_mixture(&cfg, db);
     ASSERT(sr != NULL, "Simulation result created");
     ASSERT(sr->n_reads > 0, "Generated reads");
-    /* sr->n_reads should be 300 if both beef and pork have all 3 markers.
-     * With new species, we might have fewer if some are missing.
-     * But Bos_taurus and Sus_scrofa have COI (if found), cytb, 16S.
-     * Wait, Sus_scrofa COI was NOT FOUND in my last run. 
-     * So total reads will be 100(COI_beef) + 100(cytb_both) + 100(16S_both) = 300.
-     * Actually rpm=100 per marker, so it should be 300.
+    /* With 4 markers (COI, cytb, 16S, 12S):
+     * COI (beef only) + cytb (both) + 16S (both) + 12S (both) = 400 reads.
      */
-    ASSERT(sr->n_reads == 300, "300 reads generated");
+    ASSERT(sr->n_reads == 400, "400 reads generated");
 
     /* Check that reads are valid DNA */
     for (int i = 0; i < sr->n_reads; i++) {

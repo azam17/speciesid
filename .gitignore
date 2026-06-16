@@ -38,6 +38,7 @@ package-lock.json
 # Temporary
 /tmp/
 *.tmp
+.playwright-mcp/
 
 # Word doc backups
 ~$*.docx

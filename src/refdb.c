@@ -8,12 +8,12 @@
 #define REFDB_MAGIC  0x48414C41  /* "HALA" */
 #define REFDB_VERSION 1
 
-const char *halal_status_str(halal_status_t s) {
-    switch (s) {
-        case HALAL:     return "HALAL";
-        case HARAM:     return "HARAM";
-        case MASHBOOH:  return "MASHBOOH";
-        default:        return "UNKNOWN";
+const char *species_category_str(species_category_t category) {
+    switch (category) {
+        case CATEGORY_REFERENCE: return "REFERENCE";
+        case CATEGORY_EXCLUSION: return "EXCLUSION";
+        case CATEGORY_REVIEW:    return "REVIEW";
+        default:                 return "UNKNOWN";
     }
 }
 
@@ -24,7 +24,7 @@ halal_refdb_t *refdb_create(void) {
 }
 
 int refdb_add_species(halal_refdb_t *db, const char *species_id,
-                      const char *common_name, halal_status_t status,
+                      const char *common_name, species_category_t category,
                       double mito_cn, double yield_prior) {
     if (db->n_species >= HS_MAX_SPECIES) return -1;
     int idx = db->n_species;
@@ -33,7 +33,7 @@ int refdb_add_species(halal_refdb_t *db, const char *species_id,
     memset(&db->species[idx], 0, sizeof(species_info_t));
     strncpy(db->species[idx].species_id, species_id, HS_MAX_NAME_LEN - 1);
     strncpy(db->species[idx].common_name, common_name, HS_MAX_NAME_LEN - 1);
-    db->species[idx].status = status;
+    db->species[idx].category = category;
     db->species[idx].mito_copy_number = mito_cn;
     db->species[idx].dna_yield_prior = yield_prior;
     db->n_species++;
@@ -171,7 +171,7 @@ void refdb_destroy(halal_refdb_t *db) {
 halal_refdb_t *refdb_build_default(void) {
     halal_refdb_t *db = refdb_create();
 
-    /* Add markers: COI, cytb, 16S with primer sequences */
+    /* Add markers: COI, cytb, 16S, 12S with primer sequences */
     refdb_add_marker(db, "COI",
         "GGTCAACAAATCATAAAGATATTGG",     /* LCO1490 forward primer */
         "TAAACTTCAGGGTGACCAAAAAATCA");   /* HCO2198 reverse primer */
@@ -181,35 +181,61 @@ halal_refdb_t *refdb_build_default(void) {
     refdb_add_marker(db, "16S",
         "GACGAGAAGACCCTATGGAGC",         /* Tillmar 2013 forward primer */
         "TCCGAGGTCGCCCCAACC");           /* Tillmar 2013 reverse primer */
+    refdb_add_marker(db, "12S",
+        "ACTGGGATTAGATACCCCACTATG",      /* MiFish-U forward primer */
+        "TAGAACAGGCTCCTCTAG");           /* MiFish-U reverse primer */
 
-    struct { const char *id; const char *name; halal_status_t status; double mito_cn; double yield; } sp[] = {
-        { "Sus_scrofa",           "Domestic pig",     HARAM,    1800, 1.0  },
-        { "Sus_barbatus",         "Bearded pig",      HARAM,    1750, 0.95 },
-        { "Canis_lupus",          "Dog",              HARAM,    1200, 0.8  },
-        { "Bos_taurus",           "Cattle",           HALAL,    2000, 1.2  },
-        { "Bubalus_bubalis",      "Water buffalo",    HALAL,    1900, 1.1  },
-        { "Ovis_aries",           "Sheep",            HALAL,    1700, 1.0  },
-        { "Capra_hircus",         "Goat",             HALAL,    1600, 1.0  },
-        { "Gallus_gallus",        "Chicken",          HALAL,    1000, 0.7  },
-        { "Meleagris_gallopavo",  "Turkey",           HALAL,     900, 0.6  },
-        { "Anas_platyrhynchos",   "Duck",             HALAL,     950, 0.65 },
-        { "Equus_caballus",       "Horse",            MASHBOOH, 1500, 0.9  },
-        { "Equus_asinus",         "Donkey",           MASHBOOH, 1400, 0.85 },
-        { "Salmo_salar",          "Atlantic salmon",  HALAL,    1200, 0.7  },
-        { "Oreochromis_niloticus", "Nile tilapia",    HALAL,    1100, 0.65 },
-        { "Gadus_morhua",         "Atlantic cod",     HALAL,    1300, 0.75 },
-        { "Pangasianodon_hypophthalmus", "Pangasius", HALAL,   1250, 0.7  },
-        { "Glycine_max",          "Soybean",          HALAL,     100, 0.5  },
-        { "Triticum_aestivum",    "Bread wheat",      HALAL,      80, 0.45 },
-        { "Oryza_sativa",         "Rice",             HALAL,      90, 0.48 },
+    struct { const char *id; const char *name; species_category_t category; double mito_cn; double yield; } sp[] = {
+        { "Sus_scrofa",           "Domestic pig",     CATEGORY_EXCLUSION, 1800, 1.0  },
+        /* Sus_barbatus removed: k-mer cross-reactivity with Sus_scrofa causes FP */
+        { "Canis_lupus",          "Dog",              CATEGORY_EXCLUSION, 1200, 0.8  },
+        { "Bos_taurus",           "Cattle",           CATEGORY_REFERENCE, 2000, 1.2  },
+        { "Bubalus_bubalis",      "Water buffalo",    CATEGORY_REFERENCE, 1900, 1.1  },
+        { "Ovis_aries",           "Sheep",            CATEGORY_REFERENCE, 1700, 1.0  },
+        { "Capra_hircus",         "Goat",             CATEGORY_REFERENCE, 1600, 1.0  },
+        { "Gallus_gallus",        "Chicken",          CATEGORY_REFERENCE, 1000, 0.7  },
+        { "Meleagris_gallopavo",  "Turkey",           CATEGORY_REFERENCE,  900, 0.6  },
+        { "Anas_platyrhynchos",   "Duck",             CATEGORY_REFERENCE,  950, 0.65 },
+        { "Equus_caballus",       "Horse",            CATEGORY_REVIEW, 1500, 0.9  },
+        { "Equus_asinus",         "Donkey",           CATEGORY_REVIEW, 1400, 0.85 },
+        { "Salmo_salar",          "Atlantic salmon",  CATEGORY_REFERENCE, 1200, 0.7  },
+        { "Oreochromis_niloticus", "Nile tilapia",    CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Gadus_morhua",         "Atlantic cod",     CATEGORY_REFERENCE, 1300, 0.75 },
+        { "Pangasianodon_hypophthalmus", "Pangasius", CATEGORY_REFERENCE, 1250, 0.7  },
+        /* Tuna species */
+        { "Katsuwonus_pelamis",   "Skipjack tuna",    CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Thunnus_alalunga",     "Albacore tuna",    CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Thunnus_albacares",    "Yellowfin tuna",   CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Thunnus_obesus",       "Bigeye tuna",      CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Thunnus_thynnus",      "Bluefin tuna",     CATEGORY_REFERENCE, 1100, 0.65 },
+        /* Seafood species */
+        { "Merluccius_merluccius","European hake",    CATEGORY_REFERENCE, 1200, 0.7  },
+        { "Pleuronectes_platessa","European plaice",  CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Scomber_scombrus",     "Atlantic mackerel", CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Sardina_pilchardus",   "European sardine", CATEGORY_REFERENCE, 1000, 0.6  },
+        { "Engraulis_encrasicolus","European anchovy",CATEGORY_REFERENCE, 1000, 0.6  },
+        { "Dicentrarchus_labrax", "European sea bass",CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Sparus_aurata",        "Gilthead bream",   CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Solea_solea",          "Common sole",      CATEGORY_REFERENCE, 1100, 0.65 },
+        { "Salmo_trutta",         "Brown trout",      CATEGORY_REFERENCE, 1200, 0.7  },
+        { "Oncorhynchus_mykiss",  "Rainbow trout",    CATEGORY_REFERENCE, 1200, 0.7  },
+        /* Crustaceans */
+        { "Penaeus_monodon",      "Tiger prawn",      CATEGORY_REFERENCE,  800, 0.5  },
+        { "Homarus_gammarus",     "European lobster", CATEGORY_REFERENCE,  800, 0.5  },
+        /* Other */
+        { "Oryctolagus_cuniculus","European rabbit",  CATEGORY_REFERENCE, 1300, 0.8  },
+        /* Plant fillers */
+        { "Glycine_max",          "Soybean",          CATEGORY_REFERENCE,  100, 0.5  },
+        { "Triticum_aestivum",    "Bread wheat",      CATEGORY_REFERENCE,   80, 0.45 },
+        { "Oryza_sativa",         "Rice",             CATEGORY_REFERENCE,   90, 0.48 },
     };
     int n_sp = (int)(sizeof(sp) / sizeof(sp[0]));
 
     for (int i = 0; i < n_sp; i++) {
-        int si = refdb_add_species(db, sp[i].id, sp[i].name, sp[i].status,
+        int si = refdb_add_species(db, sp[i].id, sp[i].name, sp[i].category,
                                    sp[i].mito_cn, sp[i].yield);
         /* Add real NCBI mitochondrial amplicon sequences from refseqs.h */
-        for (int m = 0; m < 3; m++) {
+        for (int m = 0; m < REFSEQ_N_MARKERS; m++) {
             const refseq_entry_t *entry = &REFSEQ_TABLE[i][m];
             if (entry->seq && entry->len > 0) {
                 refdb_add_marker_ref(db, si, m, entry->seq, entry->len);
@@ -247,29 +273,52 @@ static char *read_fasta_seq(const char *path, int *out_len) {
 static const struct {
     const char *id;
     const char *name;
-    halal_status_t status;
+    species_category_t category;
     double mito_cn;
     double yield;
 } known_species[] = {
-    { "Sus_scrofa",          "Domestic pig",     HARAM,    1800, 1.0 },
-    { "Sus_barbatus",        "Bearded pig",      HARAM,    1750, 0.95 },
-    { "Canis_lupus",         "Dog",              HARAM,    1200, 0.8 },
-    { "Bos_taurus",          "Cattle",           HALAL,    2000, 1.2 },
-    { "Bubalus_bubalis",     "Water buffalo",    HALAL,    1900, 1.1 },
-    { "Ovis_aries",          "Sheep",            HALAL,    1700, 1.0 },
-    { "Capra_hircus",        "Goat",             HALAL,    1600, 1.0 },
-    { "Gallus_gallus",       "Chicken",          HALAL,    1000, 0.7 },
-    { "Meleagris_gallopavo", "Turkey",           HALAL,     900, 0.6 },
-    { "Anas_platyrhynchos",  "Duck",             HALAL,     950, 0.65 },
-    { "Equus_caballus",      "Horse",            MASHBOOH, 1500, 0.9  },
-    { "Equus_asinus",        "Donkey",           MASHBOOH, 1400, 0.85 },
-    { "Salmo_salar",         "Atlantic salmon",  HALAL,    1200, 0.7  },
-    { "Oreochromis_niloticus", "Nile tilapia",    HALAL,    1100, 0.65 },
-    { "Gadus_morhua",        "Atlantic cod",     HALAL,    1300, 0.75 },
-    { "Pangasianodon_hypophthalmus", "Pangasius", HALAL,   1250, 0.7  },
-    { "Glycine_max",         "Soybean",          HALAL,     100, 0.5  },
-    { "Triticum_aestivum",   "Bread wheat",      HALAL,      80, 0.45 },
-    { "Oryza_sativa",        "Rice",             HALAL,      90, 0.48 },
+    { "Sus_scrofa",          "Domestic pig",     CATEGORY_EXCLUSION, 1800, 1.0  },
+    /* Sus_barbatus removed: k-mer cross-reactivity with Sus_scrofa causes FP */
+    { "Canis_lupus",         "Dog",              CATEGORY_EXCLUSION, 1200, 0.8  },
+    { "Bos_taurus",          "Cattle",           CATEGORY_REFERENCE, 2000, 1.2  },
+    { "Bubalus_bubalis",     "Water buffalo",    CATEGORY_REFERENCE, 1900, 1.1  },
+    { "Ovis_aries",          "Sheep",            CATEGORY_REFERENCE, 1700, 1.0  },
+    { "Capra_hircus",        "Goat",             CATEGORY_REFERENCE, 1600, 1.0  },
+    { "Gallus_gallus",       "Chicken",          CATEGORY_REFERENCE, 1000, 0.7  },
+    { "Meleagris_gallopavo", "Turkey",           CATEGORY_REFERENCE,  900, 0.6  },
+    { "Anas_platyrhynchos",  "Duck",             CATEGORY_REFERENCE,  950, 0.65 },
+    { "Equus_caballus",      "Horse",            CATEGORY_REVIEW, 1500, 0.9  },
+    { "Equus_asinus",        "Donkey",           CATEGORY_REVIEW, 1400, 0.85 },
+    { "Salmo_salar",         "Atlantic salmon",  CATEGORY_REFERENCE, 1200, 0.7  },
+    { "Oreochromis_niloticus", "Nile tilapia",   CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Gadus_morhua",        "Atlantic cod",     CATEGORY_REFERENCE, 1300, 0.75 },
+    { "Pangasianodon_hypophthalmus", "Pangasius", CATEGORY_REFERENCE, 1250, 0.7  },
+    /* Tuna species */
+    { "Katsuwonus_pelamis",  "Skipjack tuna",    CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Thunnus_alalunga",    "Albacore tuna",    CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Thunnus_albacares",   "Yellowfin tuna",   CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Thunnus_obesus",      "Bigeye tuna",      CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Thunnus_thynnus",     "Bluefin tuna",     CATEGORY_REFERENCE, 1100, 0.65 },
+    /* Seafood species */
+    { "Merluccius_merluccius","European hake",   CATEGORY_REFERENCE, 1200, 0.7  },
+    { "Pleuronectes_platessa","European plaice", CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Scomber_scombrus",    "Atlantic mackerel", CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Sardina_pilchardus",  "European sardine", CATEGORY_REFERENCE, 1000, 0.6  },
+    { "Engraulis_encrasicolus","European anchovy",CATEGORY_REFERENCE, 1000, 0.6  },
+    { "Dicentrarchus_labrax","European sea bass",CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Sparus_aurata",       "Gilthead bream",   CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Solea_solea",         "Common sole",      CATEGORY_REFERENCE, 1100, 0.65 },
+    { "Salmo_trutta",        "Brown trout",      CATEGORY_REFERENCE, 1200, 0.7  },
+    { "Oncorhynchus_mykiss", "Rainbow trout",    CATEGORY_REFERENCE, 1200, 0.7  },
+    /* Crustaceans */
+    { "Penaeus_monodon",     "Tiger prawn",      CATEGORY_REFERENCE,  800, 0.5  },
+    { "Homarus_gammarus",    "European lobster", CATEGORY_REFERENCE,  800, 0.5  },
+    /* Other */
+    { "Oryctolagus_cuniculus","European rabbit", CATEGORY_REFERENCE, 1300, 0.8  },
+    /* Plant fillers */
+    { "Glycine_max",         "Soybean",          CATEGORY_REFERENCE,  100, 0.5  },
+    { "Triticum_aestivum",   "Bread wheat",      CATEGORY_REFERENCE,   80, 0.45 },
+    { "Oryza_sativa",        "Rice",             CATEGORY_REFERENCE,   90, 0.48 },
     { NULL, NULL, 0, 0, 0 }
 };
 
@@ -286,9 +335,12 @@ halal_refdb_t *refdb_build_from_fasta_dir(const char *fasta_dir) {
     refdb_add_marker(db, "16S",
         "GACGAGAAGACCCTATGGAGC",         /* Tillmar 2013 forward */
         "TCCGAGGTCGCCCCAACC");           /* Tillmar 2013 reverse */
+    refdb_add_marker(db, "12S",
+        "ACTGGGATTAGATACCCCACTATG",      /* MiFish-U forward */
+        "TAGAACAGGCTCCTCTAG");           /* MiFish-U reverse */
 
-    const char *marker_names[] = { "COI", "cytb", "16S" };
-    int n_markers = 3;
+    const char *marker_names[] = { "COI", "cytb", "16S", "12S" };
+    int n_markers = 4;
 
     /* Scan for known species with FASTA files in directory */
     for (int ki = 0; known_species[ki].id != NULL; ki++) {
@@ -302,7 +354,7 @@ halal_refdb_t *refdb_build_from_fasta_dir(const char *fasta_dir) {
         if (!has_any) continue;
 
         int si = refdb_add_species(db, sp_id, known_species[ki].name,
-                                    known_species[ki].status,
+                                    known_species[ki].category,
                                     known_species[ki].mito_cn,
                                     known_species[ki].yield);
         for (int m = 0; m < n_markers; m++) {

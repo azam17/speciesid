@@ -7,10 +7,10 @@ A bias-aware expectation-maximization framework for quantitative species authent
 SpeciesID is a computational framework that provides calibrated weight fraction estimates of meat species from amplicon sequencing (metabarcoding) data. It jointly models mitochondrial copy number variation, PCR amplification bias, and DNA degradation within an EM algorithm.
 
 **Key features:**
-- Two-stage k-mer classification: FracMinHash (k=21) coarse screening + exact containment (k=31)
+- Two-stage k-mer classification: FracMinHash (k=21) coarse screening + exact containment (k=21)
 - Bias-aware EM with Dirichlet priors, DNA yield correction, PCR bias, and degradation modeling
 - Likelihood ratio tests for species presence with confidence intervals
-- 19-species reference database covering halal, haram, and mashbooh taxa
+- Reference database with configurable species categories for screening and review
 - <1 second processing time for 15,000 reads
 - Command-line and native macOS GUI interfaces
 
@@ -28,14 +28,14 @@ Requires: C11 compiler, zlib. Optional: SDL2 (for GUI).
 
 ```bash
 # Build reference database and index
-./halalseq build-db -o halal.db
-./halalseq index -d halal.db -o halal.idx
+./speciesid build-db -o speciesid.db
+./speciesid index -d speciesid.db -o speciesid.idx
 
 # Classify a sample
-./halalseq run -x halal.idx -r sample.fastq -f json -o result.json
+./speciesid run -x speciesid.idx -r sample.fastq -f json -o result.json
 
 # With post-EM pruning (recommended for short amplicons)
-./halalseq run -x halal.idx -r sample.fastq --prune 0.05 -f json -o result.json
+./speciesid run -x speciesid.idx -r sample.fastq --prune 0.05 -f json -o result.json
 ```
 
 ## Project Structure

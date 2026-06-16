@@ -12,6 +12,7 @@
 #include "calibrate.h"
 #include "report.h"
 #include "simulate.h"
+#include "analyze.h"
 
 static void usage(void) {
     fprintf(stderr,
@@ -20,6 +21,7 @@ static void usage(void) {
         "  build-db     Build reference database (default built-in species)\n"
         "  index        Build multi-marker index from reference database\n"
         "  run          Full pipeline: classify + quantify + report\n"
+        "  analyze      Manifest-driven run for the web workflow\n"
         "  calibrate    Estimate bias priors from spike-in standards\n"
         "  classify     Classify reads against index (no quantification)\n"
         "  quantify     Run EM on pre-classified reads\n"
@@ -33,6 +35,36 @@ static void usage(void) {
         "  speciesid simulate -d speciesid.db -c \"Bos_taurus:0.9,Sus_scrofa:0.1\" -o sim.fq\n"
         "  speciesid benchmark -d speciesid.db -n 100 -o bench.tsv\n"
     );
+}
+
+/* --- analyze command (manifest-driven web engine contract) --- */
+static int cmd_analyze(int argc, char **argv) {
+    const char *manifest_path = NULL;
+    const char *output_path = NULL;
+    int c;
+    static struct option opts[] = {
+        { "manifest", required_argument, 0, 'm' },
+        { "output", required_argument, 0, 'o' },
+        { "help", no_argument, 0, 'h' },
+        { 0, 0, 0, 0 }
+    };
+    while ((c = getopt_long(argc, argv, "m:o:h", opts, NULL)) != -1) {
+        switch (c) {
+            case 'm': manifest_path = optarg; break;
+            case 'o': output_path = optarg; break;
+            case 'h': default:
+                fprintf(stderr,
+                    "Usage: speciesid analyze --manifest manifest.json --output result.json\n"
+                    "  Manifest v1 is the stable web-app contract.\n"
+                    "  This v1 bridge reports unadjusted screening evidence; control-aware\n"
+                    "  correction, out-of-panel, and resolvability models are flagged as\n"
+                    "  not implemented unless the C core produces them.\n");
+                return c == 'h' ? 0 : 1;
+        }
+    }
+    if (!manifest_path) { HS_LOG_ERROR("No manifest specified (--manifest)"); return 1; }
+    if (!output_path) { HS_LOG_ERROR("No output specified (--output)"); return 1; }
+    return analyze_execute_manifest(manifest_path, output_path);
 }
 
 /* --- build-db command --- */
@@ -204,7 +236,14 @@ static int cmd_run(int argc, char **argv) {
     double threshold = 0.001;
     double prune_threshold = 0.0;
     int is_nanopore = 0;
+    int is_longread = 0;
     int use_degradation = 0;
+    int use_advanced = 0;
+    int use_fast = 0;
+    int use_fisher_ci = 0;
+    int use_brent_lambda = 0;
+    int use_full_lrt = 0;
+    int n_bootstrap = 0;
     int c;
     static struct option opts[] = {
         { "index", required_argument, 0, 'x' },
@@ -213,13 +252,20 @@ static int cmd_run(int argc, char **argv) {
         { "format", required_argument, 0, 'f' },
         { "threshold", required_argument, 0, 't' },
         { "nanopore", no_argument, 0, 'n' },
+        { "longread", no_argument, 0, 'L' },
         { "calibration", required_argument, 0, 'c' },
         { "degradation", no_argument, 0, 'D' },
         { "prune", required_argument, 0, 'P' },
+        { "advanced", no_argument, 0, 'A' },
+        { "fast", no_argument, 0, 1000 },
+        { "fisher-ci", no_argument, 0, 1001 },
+        { "brent-lambda", no_argument, 0, 1002 },
+        { "full-lrt", no_argument, 0, 1003 },
+        { "bootstrap", required_argument, 0, 1004 },
         { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 }
     };
-    while ((c = getopt_long(argc, argv, "x:r:o:f:t:nc:DP:h", opts, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "x:r:o:f:t:nLc:DP:Ah", opts, NULL)) != -1) {
         switch (c) {
             case 'x': idx_path = optarg; break;
             case 'r': reads_path = optarg; break;
@@ -227,15 +273,30 @@ static int cmd_run(int argc, char **argv) {
             case 'f': format = optarg; break;
             case 't': threshold = atof(optarg); break;
             case 'n': is_nanopore = 1; break;
+            case 'L': is_longread = 1; break;
             case 'c': cal_path = optarg; break;
             case 'D': use_degradation = 1; break;
             case 'P': prune_threshold = atof(optarg); break;
+            case 'A': use_advanced = 1; break;
+            case 1000: use_fast = 1; break;
+            case 1001: use_fisher_ci = 1; break;
+            case 1002: use_brent_lambda = 1; break;
+            case 1003: use_full_lrt = 1; break;
+            case 1004: n_bootstrap = atoi(optarg); break;
             case 'h': default:
                 fprintf(stderr,
                     "Usage: speciesid run -x index.idx -r reads.fq [-o report] [-f json|tsv|summary]\n"
+                    "  -L, --longread      Force long-read mode (Nanopore/PacBio)\n"
+                    "  -n, --nanopore      Legacy nanopore mode (use --longread instead)\n"
                     "  --calibration FILE  Load calibration priors from file\n"
                     "  --degradation       Enable degradation modeling\n"
-                    "  --prune FLOAT       Post-EM pruning threshold (remove species below this weight)\n");
+                    "  --prune FLOAT       Post-EM pruning threshold (remove species below this weight)\n"
+                    "  --advanced          Enable Brent lambda (already default: Louis CI + full LRT)\n"
+                    "  --fast              Use fast Wald CIs + profile LRT instead of rigorous defaults\n"
+                    "  --fisher-ci         Use observed Fisher information CIs (default, override if --fast)\n"
+                    "  --brent-lambda      Use Brent's method for lambda (requires --advanced or explicit)\n"
+                    "  --full-lrt          Use full nested-model LRT (default, override if --fast)\n"
+                    "  --bootstrap N       Run N bootstrap resamples for stability assessment\n");
                 return c == 'h' ? 0 : 1;
         }
     }
@@ -255,18 +316,40 @@ static int cmd_run(int argc, char **argv) {
     HS_LOG_INFO("Read %d sequences from %s", n_reads, reads_path);
 
     /* Classify */
-    classify_opts_t copts = is_nanopore ? classify_opts_nanopore() : classify_opts_default();
+    classify_opts_t copts;
+    if (is_longread) {
+        copts = classify_opts_longread();
+    } else if (is_nanopore) {
+        copts = classify_opts_nanopore();
+    } else {
+        copts = classify_opts_default();  /* READ_MODE_AUTO */
+    }
     read_result_t *results = classify_reads(idx, (const char **)seqs, lens, n_reads, &copts);
 
     /* Build EM input */
     int n_em_reads;
     em_read_t *em_reads = em_reads_from_classify(results, n_reads, &n_em_reads);
     HS_LOG_INFO("Classified %d reads for EM", n_em_reads);
+    if (n_em_reads == 0) {
+        HS_LOG_WARN("No reads matched any reference marker — output will be empty");
+    }
 
     /* Run EM */
     em_config_t ecfg = em_config_default();
     ecfg.estimate_degradation = use_degradation;
     ecfg.prune_threshold = prune_threshold;
+    if (use_fast) {
+        ecfg.use_advanced_ci = 0;
+        ecfg.use_full_lrt = 0;
+    }
+    if (use_advanced) {
+        ecfg.use_advanced_ci = 1;
+        ecfg.use_brent_lambda = 1;
+        ecfg.use_full_lrt = 1;
+    }
+    if (use_fisher_ci) ecfg.use_advanced_ci = 1;
+    if (use_brent_lambda) ecfg.use_brent_lambda = 1;
+    if (use_full_lrt) ecfg.use_full_lrt = 1;
 
     /* Load calibration priors if specified */
     if (cal_path) {
@@ -304,6 +387,82 @@ static int cmd_run(int argc, char **argv) {
 
     /* Generate report */
     halal_report_t *report = report_generate(em, idx->db, results, n_reads, threshold);
+
+    /* Bootstrap stability: re-run pipeline on N subsamples of reads */
+    if (n_bootstrap > 0 && n_reads > 0 && n_em_reads > 0) {
+        int subsample_n = n_reads / 2 > 100 ? n_reads / 2 : n_reads;
+        int stable_count = 0;
+        uint64_t bs_seed = 42;
+
+        for (int bs = 0; bs < n_bootstrap; bs++) {
+            /* Subsample reads with replacement */
+            hs_rng_t bs_rng;
+            hs_rng_seed(&bs_rng, bs_seed + (uint64_t)bs * 1000);
+            char **bs_seqs = (char **)hs_malloc((size_t)subsample_n * sizeof(char *));
+            int *bs_lens = (int *)hs_malloc((size_t)subsample_n * sizeof(int));
+            for (int i = 0; i < subsample_n; i++) {
+                int ridx = (int)(hs_rng_uniform(&bs_rng) * n_reads);
+                bs_seqs[i] = seqs[ridx];
+                bs_lens[i] = lens[ridx];
+            }
+
+            classify_opts_t bs_copts = copts;
+            read_result_t *bs_results = classify_reads(idx,
+                (const char **)bs_seqs, bs_lens, subsample_n, &bs_copts);
+            int bs_n_em;
+            em_read_t *bs_em_reads = em_reads_from_classify(bs_results, subsample_n, &bs_n_em);
+
+            em_config_t bs_ecfg = ecfg;
+            bs_ecfg.n_restarts = 1;
+            bs_ecfg.max_iter = 100;
+
+            int *bs_amp_lens = (int *)hs_calloc(
+                (size_t)(idx->db->n_species * idx->db->n_markers), sizeof(int));
+            for (int j = 0; j < idx->db->n_marker_refs; j++) {
+                int si = idx->db->markers[j].species_idx;
+                int mi = idx->db->markers[j].marker_idx;
+                bs_amp_lens[si * idx->db->n_markers + mi] = idx->db->markers[j].amplicon_length;
+            }
+
+            double *bs_mito_cn = (double *)hs_malloc((size_t)idx->db->n_species * sizeof(double));
+            for (int s = 0; s < idx->db->n_species; s++)
+                bs_mito_cn[s] = idx->db->species[s].mito_copy_number;
+            bs_ecfg.mito_copy_numbers = bs_mito_cn;
+
+            em_result_t *bs_em = bs_n_em > 0
+                ? em_fit(bs_em_reads, bs_n_em, idx->db->n_species,
+                         idx->db->n_markers, bs_amp_lens, &bs_ecfg)
+                : NULL;
+
+            /* Compare species list with baseline: same species at >0 weight */
+            int match = 1;
+            if (bs_em) {
+                for (int s = 0; s < idx->db->n_species && match; s++) {
+                    int in_baseline = (em && em->w[s] > 1e-6);
+                    int in_bootstrap = (bs_em->w[s] > 1e-6);
+                    if (in_baseline != in_bootstrap) match = 0;
+                }
+                em_result_destroy(bs_em);
+            } else {
+                match = 0;
+            }
+
+            if (match) stable_count++;
+
+            free(bs_mito_cn);
+            free(bs_amp_lens);
+            em_reads_free(bs_em_reads, bs_n_em);
+            classify_results_free(bs_results, subsample_n);
+            free(bs_seqs);
+            free(bs_lens);
+        }
+
+        report->bootstrap_stability_pct = (int)(100.0 * stable_count / n_bootstrap);
+        report->n_bootstrap_resamples = n_bootstrap;
+        HS_LOG_INFO("Bootstrap stability: %d/%d (%.1f%%)",
+                    stable_count, n_bootstrap,
+                    100.0 * stable_count / n_bootstrap);
+    }
 
     FILE *out_fp = stdout;
     if (output) {
@@ -413,6 +572,7 @@ static int cmd_benchmark(int argc, char **argv) {
     int n_mixtures = 10;
     int reads_per_marker = 500;
     uint64_t seed = 123;
+    int use_advanced = 0;
     int c;
     static struct option opts[] = {
         { "db", required_argument, 0, 'd' },
@@ -420,19 +580,21 @@ static int cmd_benchmark(int argc, char **argv) {
         { "mixtures", required_argument, 0, 'n' },
         { "reads", required_argument, 0, 'r' },
         { "seed", required_argument, 0, 's' },
+        { "advanced", no_argument, 0, 'A' },
         { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 }
     };
-    while ((c = getopt_long(argc, argv, "d:o:n:r:s:h", opts, NULL)) != -1) {
+    while ((c = getopt_long(argc, argv, "d:o:n:r:s:Ah", opts, NULL)) != -1) {
         switch (c) {
             case 'd': db_path = optarg; break;
             case 'o': output = optarg; break;
             case 'n': n_mixtures = atoi(optarg); break;
             case 'r': reads_per_marker = atoi(optarg); break;
             case 's': seed = (uint64_t)atol(optarg); break;
+            case 'A': use_advanced = 1; break;
             case 'h': default:
                 fprintf(stderr,
-                    "Usage: speciesid benchmark -d db.db [-n n_mixtures] [-o output.tsv]\n");
+                    "Usage: speciesid benchmark -d db.db [-n n_mixtures] [-o output.tsv] [--advanced]\n");
                 return c == 'h' ? 0 : 1;
         }
     }
@@ -453,7 +615,7 @@ static int cmd_benchmark(int argc, char **argv) {
     hs_rng_t rng;
     hs_rng_seed(&rng, seed);
 
-    fprintf(out_fp, "mixture\ttrue_pork\test_pork\tabs_error\tverdict\n");
+    fprintf(out_fp, "mixture\ttrue_pork\test_pork\tabs_error\tscreening_result\n");
 
     double total_error = 0.0;
     for (int i = 0; i < n_mixtures; i++) {
@@ -484,6 +646,11 @@ static int cmd_benchmark(int argc, char **argv) {
         em_read_t *em_reads = em_reads_from_classify(results, sr->n_reads, &n_em_reads);
 
         em_config_t ecfg = em_config_default();
+        if (use_advanced) {
+            ecfg.use_advanced_ci = 1;
+            ecfg.use_brent_lambda = 1;
+            ecfg.use_full_lrt = 1;
+        }
 
         /* Pass mito copy numbers for single-marker bias correction */
         double *mito_cn = (double *)hs_malloc((size_t)idx->db->n_species * sizeof(double));
@@ -510,7 +677,7 @@ static int cmd_benchmark(int argc, char **argv) {
             if (pork_idx2 >= 0 && em) est_pork = em->w[pork_idx2];
 
             halal_report_t *rep = report_generate(em, idx->db, results, sr->n_reads, 0.001);
-            vstr = verdict_str(rep->verdict);
+            vstr = screening_result_str(rep->screening_result);
             fprintf(out_fp, "%d\t%.4f\t%.4f\t%.4f\t%s\n",
                     i, pork_frac, est_pork, fabs(est_pork - pork_frac), vstr);
             total_error += fabs(est_pork - pork_frac);
@@ -550,6 +717,7 @@ int main(int argc, char **argv) {
     if (strcmp(cmd, "build-db") == 0) return cmd_build_db(argc - 1, argv + 1);
     if (strcmp(cmd, "index") == 0) return cmd_index(argc - 1, argv + 1);
     if (strcmp(cmd, "run") == 0) return cmd_run(argc - 1, argv + 1);
+    if (strcmp(cmd, "analyze") == 0) return cmd_analyze(argc - 1, argv + 1);
     if (strcmp(cmd, "calibrate") == 0) return cmd_calibrate(argc - 1, argv + 1);
     if (strcmp(cmd, "simulate") == 0) return cmd_simulate(argc - 1, argv + 1);
     if (strcmp(cmd, "benchmark") == 0) return cmd_benchmark(argc - 1, argv + 1);

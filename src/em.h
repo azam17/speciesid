@@ -15,6 +15,9 @@ typedef struct {
     uint64_t seed;
     double *mito_copy_numbers; /* [S] mito CN per species (NULL = estimate d freely) */
     double prune_threshold;    /* Post-EM pruning: remove species below this weight (0 = disabled) */
+    int use_advanced_ci;       /* 0 = Wald (default), 1 = observed Fisher information */
+    int use_brent_lambda;      /* 0 = closed-form (default), 1 = Brent's method */
+    int use_full_lrt;          /* 0 = profile LRT (default), 1 = full nested-model refit */
 } em_config_t;
 
 typedef struct {
@@ -49,17 +52,29 @@ em_result_t *em_fit(const em_read_t *reads, int n_reads,
                      const int *amplicon_lengths,
                      const em_config_t *config);
 
-/* Compute Fisher information for confidence intervals */
+/* Compute Fisher information for confidence intervals (Wald approximation) */
 void em_fisher_info(em_result_t *result,
                      const em_read_t *reads, int n_reads,
                      int n_species, int n_markers,
                      const int *amplicon_lengths);
 
-/* Perform Likelihood Ratio Test (LRT) for species presence */
+/* Observed Fisher information CIs with Louis (1982) missing-data correction */
+void em_fisher_info_observed(em_result_t *result,
+                              const em_read_t *reads, int n_reads,
+                              int n_species, int n_markers,
+                              const int *amplicon_lengths);
+
+/* Perform Likelihood Ratio Test (LRT) for species presence (profile) */
 void em_lrt(em_result_t *result,
             const em_read_t *reads, int n_reads,
             const em_config_t *config,
             const int *amplicon_lengths);
+
+/* Full nested-model LRT: re-fits EM with each species removed */
+void em_lrt_full(em_result_t *result,
+                 const em_read_t *reads, int n_reads,
+                 const em_config_t *config,
+                 const int *amplicon_lengths);
 
 /* Build em_read_t array from classify results */
 em_read_t *em_reads_from_classify(const void *results, int n_reads,

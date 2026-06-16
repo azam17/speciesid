@@ -367,10 +367,12 @@ static void test_em_no_degradation_regression(void) {
     ASSERT(r != NULL, "EM result not NULL");
     ASSERT_NEAR(r->w[0], 0.5, 0.15, "50/50 mixture recovered");
 
-    /* BIC should NOT include lambda */
-    int n_params_expected = (2 - 1) + 2 + 2 * 1;
+    /* BIC should NOT include lambda.
+     * In single-marker mode (n_markers=1), d is fixed from mito CN priors and b=1.0,
+     * so only w is free: n_params = S-1 */
+    int n_params_expected = (2 - 1);
     double bic_expected = -2.0 * r->log_likelihood + n_params_expected * log((double)n_reads);
-    ASSERT_NEAR(r->bic, bic_expected, 0.1, "BIC without lambda");
+    ASSERT_NEAR(r->bic, bic_expected, 0.1, "BIC without lambda (single-marker mode)");
 
     em_result_destroy(r);
     em_reads_free(reads, n_reads);
@@ -399,6 +401,7 @@ static void test_em_pruning(void) {
 
     /* Without pruning, minor species would have some small weight */
     em_config_t cfg_no_prune = em_config_default();
+    cfg_no_prune.prune_threshold = 0.0;  /* Explicitly disable for this test */
     em_result_t *res2 = em_fit(reads, n_reads, 2, 1, amp_lens, &cfg_no_prune);
     ASSERT(res2 != NULL, "EM without pruning converged");
     double minor2 = res2->w[0] < res2->w[1] ? res2->w[0] : res2->w[1];
@@ -458,6 +461,156 @@ static void test_calibration_estimate(void) {
     free(sample.obs_reads);
 }
 
+/* --- Advanced inference comparison tests --- */
+
+static void test_em_fisher_vs_wald(void) {
+    printf("  test_em_fisher_vs_wald...\n");
+    /* 90:10 mixture — near-boundary case where Fisher should differ from Wald */
+    int n_reads;
+    em_read_t *reads = make_reads_2species(3000, 3, 0.9, 0.1, NULL, 555, &n_reads);
+    int amp_lens[6] = { 658, 425, 560, 658, 425, 560 };
+
+    /* Standard (Wald) */
+    em_config_t cfg_wald = em_config_default();
+    cfg_wald.n_restarts = 3;
+    em_result_t *res_wald = em_fit(reads, n_reads, 2, 3, amp_lens, &cfg_wald);
+
+    /* Advanced (Fisher) */
+    em_config_t cfg_fisher = em_config_default();
+    cfg_fisher.n_restarts = 3;
+    cfg_fisher.use_advanced_ci = 1;
+    em_result_t *res_fisher = em_fit(reads, n_reads, 2, 3, amp_lens, &cfg_fisher);
+
+    ASSERT(res_wald != NULL && res_fisher != NULL, "Both methods converged");
+
+    /* Weights should be nearly identical (same EM, just different CIs) */
+    ASSERT_NEAR(res_wald->w[0], res_fisher->w[0], 0.01,
+                "Weights match between Wald and Fisher");
+
+    /* Fisher CIs should be valid (contain true value 0.9 or 0.1) */
+    double dominant_fisher = res_fisher->w[0] > res_fisher->w[1] ? 0 : 1;
+    int dom_idx = (int)dominant_fisher;
+    /* The true dominant value is 0.9 */
+    double true_dom = 0.9;
+    double true_min = 0.1;
+    if (res_fisher->w[0] < res_fisher->w[1]) {
+        dom_idx = 1;
+    } else {
+        dom_idx = 0;
+    }
+    int min_idx = 1 - dom_idx;
+
+    ASSERT(res_fisher->w_ci_lo[dom_idx] < true_dom &&
+           res_fisher->w_ci_hi[dom_idx] > true_dom,
+           "Fisher CI covers true dominant value");
+    ASSERT(res_fisher->w_ci_lo[min_idx] < true_min &&
+           res_fisher->w_ci_hi[min_idx] > true_min,
+           "Fisher CI covers true minor value");
+
+    em_result_destroy(res_wald);
+    em_result_destroy(res_fisher);
+    em_reads_free(reads, n_reads);
+}
+
+static void test_em_brent_vs_closedform(void) {
+    printf("  test_em_brent_vs_closedform...\n");
+    /* With degradation enabled, compare LL between closed-form and Brent's lambda */
+    int n_species = 2, n_markers = 2;
+    int amp_lens[4] = {350, 700, 350, 700};
+    int n_reads = 1000;
+
+    em_read_t *reads = (em_read_t *)hs_calloc((size_t)n_reads, sizeof(em_read_t));
+    hs_rng_t rng;
+    hs_rng_seed(&rng, 777);
+
+    double true_lambda = 0.002;
+    for (int i = 0; i < n_reads; i++) {
+        int true_sp = (hs_rng_uniform(&rng) < 0.7) ? 0 : 1;
+        double surv0 = exp(-true_lambda * 350.0);
+        double surv1 = exp(-true_lambda * 700.0);
+        double p0 = surv0 / (surv0 + surv1);
+        int marker = (hs_rng_uniform(&rng) < p0) ? 0 : 1;
+
+        reads[i].marker_idx = marker;
+        reads[i].n_candidates = n_species;
+        reads[i].species_indices = (int *)hs_malloc((size_t)n_species * sizeof(int));
+        reads[i].containments = (double *)hs_malloc((size_t)n_species * sizeof(double));
+        for (int s = 0; s < n_species; s++) {
+            reads[i].species_indices[s] = s;
+            reads[i].containments[s] = (s == true_sp) ? 0.95 : 0.05;
+        }
+    }
+
+    /* Closed-form lambda */
+    em_config_t cfg_cf = em_config_default();
+    cfg_cf.estimate_degradation = 1;
+    cfg_cf.n_restarts = 3;
+    em_result_t *res_cf = em_fit(reads, n_reads, n_species, n_markers, amp_lens, &cfg_cf);
+
+    /* Brent's lambda */
+    em_config_t cfg_br = em_config_default();
+    cfg_br.estimate_degradation = 1;
+    cfg_br.use_brent_lambda = 1;
+    cfg_br.n_restarts = 3;
+    em_result_t *res_br = em_fit(reads, n_reads, n_species, n_markers, amp_lens, &cfg_br);
+
+    ASSERT(res_cf != NULL && res_br != NULL, "Both methods converged");
+
+    /* Brent should achieve >= log-likelihood of closed-form */
+    ASSERT(res_br->log_likelihood >= res_cf->log_likelihood - 1.0,
+           "Brent LL >= closed-form LL (within tolerance)");
+
+    /* Both should recover reasonable weights */
+    ASSERT_NEAR(res_cf->w[0], 0.7, 0.15, "Closed-form weight near 0.7");
+    ASSERT_NEAR(res_br->w[0], 0.7, 0.15, "Brent weight near 0.7");
+
+    em_result_destroy(res_cf);
+    em_result_destroy(res_br);
+    em_reads_free(reads, n_reads);
+}
+
+static void test_em_full_lrt_vs_profile(void) {
+    printf("  test_em_full_lrt_vs_profile...\n");
+    /* 90:10 mixture — species 0 (dominant) and species 1 (minor) both present.
+     * Both LRT methods should detect both as present (p < 0.05).
+     * Full LRT should generally have at least as much power. */
+    int n_reads;
+    em_read_t *reads = make_reads_2species(3000, 3, 0.9, 0.1, NULL, 333, &n_reads);
+    int amp_lens[6] = { 658, 425, 560, 658, 425, 560 };
+
+    /* Profile LRT (standard) */
+    em_config_t cfg_profile = em_config_default();
+    cfg_profile.n_restarts = 3;
+    em_result_t *res_prof = em_fit(reads, n_reads, 2, 3, amp_lens, &cfg_profile);
+
+    /* Full nested-model LRT */
+    em_config_t cfg_full = em_config_default();
+    cfg_full.n_restarts = 3;
+    cfg_full.use_full_lrt = 1;
+    em_result_t *res_full = em_fit(reads, n_reads, 2, 3, amp_lens, &cfg_full);
+
+    ASSERT(res_prof != NULL && res_full != NULL, "Both LRT methods converged");
+
+    /* Both should detect both species as present (p < 0.05) */
+    ASSERT(res_prof->p_values[0] < 0.05, "Profile LRT: dominant species significant");
+    ASSERT(res_prof->p_values[1] < 0.05, "Profile LRT: minor species significant");
+    ASSERT(res_full->p_values[0] < 0.05, "Full LRT: dominant species significant");
+    ASSERT(res_full->p_values[1] < 0.05, "Full LRT: minor species significant");
+
+    /* Full LRT scores should be non-negative */
+    ASSERT(res_full->lrt_scores[0] >= 0, "Full LRT score[0] >= 0");
+    ASSERT(res_full->lrt_scores[1] >= 0, "Full LRT score[1] >= 0");
+
+    /* Full LRT p-values should be <= profile p-values (more power from proper refit)
+     * Allow small numerical tolerance */
+    ASSERT(res_full->p_values[0] <= res_prof->p_values[0] + 0.01,
+           "Full LRT p[0] <= profile p[0] (more power)");
+
+    em_result_destroy(res_prof);
+    em_result_destroy(res_full);
+    em_reads_free(reads, n_reads);
+}
+
 int main(void) {
     printf("=== test_em ===\n");
     test_em_basic_50_50();
@@ -473,6 +626,9 @@ int main(void) {
     test_em_pruning();
     test_calibration_roundtrip();
     test_calibration_estimate();
+    test_em_fisher_vs_wald();
+    test_em_brent_vs_closedform();
+    test_em_full_lrt_vs_profile();
     printf("=== %d passed, %d failed ===\n", tests_passed, tests_failed);
     return tests_failed > 0 ? 1 : 0;
 }

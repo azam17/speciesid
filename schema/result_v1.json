@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://speciesid.dev/schema/result_v1.json",
+  "title": "SpeciesID Analysis Result",
+  "description": "Output contract from the SpeciesID C analysis engine. Contains run-level QC, per-sample results with control-adjusted evidence.",
+  "type": "object",
+  "required": ["schema_version", "engine_version", "run_id", "run_qc", "samples", "audit"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "engine_version": { "type": "string", "description": "C engine version, e.g. 0.2.0" },
+    "run_id": { "type": "string" },
+    "database_hash": { "type": "string" },
+    "calibration_hash": { "type": ["string", "null"] },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "run_qc": { "$ref": "#/$defs/run_qc" },
+    "samples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sample_result" }
+    },
+    "audit": { "$ref": "#/$defs/audit_trail" }
+  },
+  "$defs": {
+    "run_qc": {
+      "type": "object",
+      "required": ["status", "total_reads", "classified_read_pct", "positive_control_check", "negative_control_check"],
+      "properties": {
+        "status": { "type": "string", "enum": ["RUN_PASS", "RUN_REVIEW", "RUN_FAIL"] },
+        "total_reads": { "type": "integer" },
+        "classified_read_pct": { "type": "number", "description": "% reads assigned to at least one reference species/marker" },
+        "per_sample_depth": { "type": "array", "items": { "type": "object", "properties": { "sample_id": { "type": "string" }, "n_reads": { "type": "integer" }, "classified": { "type": "integer" }, "unclassified": { "type": "integer" } } } },
+        "positive_control_check": { "$ref": "#/$defs/control_check" },
+        "negative_control_check": { "$ref": "#/$defs/control_check" },
+        "extraction_blank_check": { "$ref": "#/$defs/control_check" },
+        "marker_balance": { "$ref": "#/$defs/marker_balance" },
+        "index_bleed_estimate": { "type": "number", "description": "Estimated cross-sample bleed rate (0-1)" },
+        "primer_dropout": { "type": "array", "items": { "type": "object", "properties": { "marker_id": { "type": "string" }, "dropout_flag": { "type": "boolean" }, "read_fraction": { "type": "number" } } } },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "control_check": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["OK", "WARN", "FAIL", "NOT_PROVIDED"] },
+        "total_reads": { "type": "integer" },
+        "classified_reads": { "type": "integer" },
+        "detected_species": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "species_id": { "type": "string" },
+              "read_count": { "type": "integer" },
+              "weight_pct": { "type": "number" }
+            }
+          }
+        },
+        "expected_species": { "type": "array", "items": { "type": "string" }, "description": "For positive controls only: expected species IDs" },
+        "recovery_pct": { "type": "number", "description": "For positive controls: % of expected signal recovered" },
+        "contamination_flagged": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "marker_balance": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["OK", "WARN", "FAIL"] },
+        "per_marker_reads": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "gini_coefficient": { "type": "number", "description": "0 = perfectly balanced, 1 = one marker dominates" },
+        "dropout_markers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sample_result": {
+      "type": "object",
+      "required": ["sample_id", "role", "screening_result", "species", "evidence_summary"],
+      "properties": {
+        "sample_id": { "type": "string" },
+        "role": { "type": "string", "enum": ["sample", "positive_control", "negative_control", "extraction_blank"] },
+        "screening_result": { "type": "string", "enum": ["CLEAR", "ALERT", "REVIEW", "RUN_FAIL", "CONTROL_CONTAMINATION"] },
+        "out_of_panel_flag": { "type": "boolean", "description": "True when reads do not fit known reference species" },
+        "out_of_panel_details": { "$ref": "#/$defs/out_of_panel_details" },
+        "species": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/species_evidence" }
+        },
+        "evidence_summary": { "$ref": "#/$defs/evidence_summary" }
+      }
+    },
+    "species_evidence": {
+      "type": "object",
+      "required": ["species_id", "species_category", "confidence_class", "marker_evidence"],
+      "properties": {
+        "species_id": { "type": "string" },
+        "common_name": { "type": "string" },
+        "species_category": { "type": "string", "enum": ["REFERENCE", "EXCLUSION", "REVIEW", "UNKNOWN"] },
+        "confidence_class": {
+          "type": "string",
+          "enum": ["HIGH", "MEDIUM", "LOW", "TRACE", "CONTROL_CONSISTENT", "AMBIGUOUS_SPECIES", "OUT_OF_PANEL_RISK"],
+          "description": "HIGH = strong multi-marker evidence; MEDIUM = single-marker or moderate evidence; LOW = near the configured evidence threshold; TRACE = at or below the configured evidence threshold; CONTROL_CONSISTENT = signal explainable by control background; AMBIGUOUS_SPECIES = marker cannot resolve; OUT_OF_PANEL_RISK = reads don't match database"
+        },
+        "screening_estimate_pct": {
+          "type": "number",
+          "description": "Uncalibrated screening weight-fraction estimate (w/w%). Only interpret as approximate unless calibration profile is active."
+        },
+        "calibrated_estimate_pct": {
+          "type": "number",
+          "description": "Calibration-adjusted weight-fraction estimate (w/w%). Only present when a valid calibration profile is loaded."
+        },
+        "ci_lo_pct": { "type": "number" },
+        "ci_hi_pct": { "type": "number" },
+        "p_value": { "type": "number", "description": "LRT p-value for species presence vs absence. NULL if not computed." },
+        "bootstrap_stability_pct": { "type": "number", "description": "% of bootstrap resamples that agree on this species presence. NULL if bootstrap not run." },
+        "control_adjusted": { "type": "boolean", "description": "True if this species weight has been adjusted for control background." },
+        "control_background_pct": { "type": "number", "description": "Estimated background contribution from controls (w/w%). NULL if no controls." },
+        "ambiguity_group": { "type": "array", "items": { "type": "string" }, "description": "Species IDs that cannot be resolved from this species with the current marker panel. Empty if resolvable." },
+        "ambiguity_note": { "type": "string", "description": "Explanation of ambiguity, e.g. '16S cannot separate Capra_hircus from Ovis_aries'" },
+        "confirmatory_recommended": { "type": "boolean", "description": "True when confirmatory PCR/ddPCR is recommended for this species call." },
+        "confirmatory_reason": { "type": "string" },
+        "marker_evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/marker_evidence" }
+        }
+      }
+    },
+    "marker_evidence": {
+      "type": "object",
+      "required": ["marker_id", "read_count", "read_pct"],
+      "properties": {
+        "marker_id": { "type": "string" },
+        "read_count": { "type": "integer" },
+        "read_pct": { "type": "number", "description": "% of classified reads mapped to this species via this marker" },
+        "containment_mean": { "type": "number", "description": "Mean k-mer containment score for reads mapping to this species" },
+        "containment_median": { "type": "number" },
+        "kmer_uniqueness_score": { "type": "number", "description": "0-1: how unique the k-mer signature is for this species vs others" },
+        "nearest_neighbor_distance": { "type": "number", "description": "Edit distance or containment margin to the next-best species match" },
+        "detection_status": { "type": "string", "enum": ["DETECTED", "NOT_DETECTED", "AMBIGUOUS", "BELOW_THRESHOLD"] }
+      }
+    },
+    "out_of_panel_details": {
+      "type": "object",
+      "properties": {
+        "unclassified_read_pct": { "type": "number" },
+        "assignment_entropy": { "type": "number", "description": "Higher entropy = reads don't concentrate on a single species" },
+        "top_hit_containment_margin": { "type": "number", "description": "Gap between best and second-best containment score" },
+        "nearest_neighbor_distance": { "type": "number" },
+        "database_coverage_estimate": { "type": "number", "description": "Estimated proportion of reads covered by the database" },
+        "recommendation": { "type": "string", "enum": ["NONE", "CONFIRMATORY_TEST_RECOMMENDED", "DATABASE_EXPANSION_RECOMMENDED"] }
+      }
+    },
+    "evidence_summary": {
+      "type": "object",
+      "required": ["total_reads", "classified_reads", "n_species_detected", "n_markers_active", "evidence_threshold_estimate_pct"],
+      "properties": {
+        "total_reads": { "type": "integer" },
+        "classified_reads": { "type": "integer" },
+        "n_species_detected": { "type": "integer" },
+        "n_species_exclusion": { "type": "integer", "description": "Number of EXCLUSION-category species detected" },
+        "n_markers_active": { "type": "integer" },
+        "evidence_threshold_estimate_pct": { "type": "number", "description": "Screening evidence threshold estimate at current read depth (w/w%). This is not a validated limit of detection." },
+        "cross_marker_agreement": { "type": "number", "description": "0-1: agreement score across markers for detected species" },
+        "degradation_lambda": { "type": "number", "description": "Estimated DNA degradation rate. NULL if degradation model not used." }
+      }
+    },
+    "audit_trail": {
+      "type": "object",
+      "required": ["software_version", "database_version", "database_hash", "manifest", "thresholds"],
+      "properties": {
+        "software_version": { "type": "string" },
+        "database_version": { "type": "string" },
+        "database_hash": { "type": "string" },
+        "calibration_version": { "type": ["string", "null"] },
+        "calibration_hash": { "type": ["string", "null"] },
+        "marker_panel": { "type": "array", "items": { "type": "string" } },
+        "primer_set": { "type": "string" },
+        "manifest": { "type": "object", "description": "Echo of the input manifest for audit traceability" },
+        "thresholds": {
+          "type": "object",
+          "properties": {
+            "detection_threshold_wpw": { "type": "number" },
+            "min_containment": { "type": "number" },
+            "control_background_threshold": { "type": "number" }
+          }
+        },
+        "controls_used": {
+          "type": "object",
+          "properties": {
+            "positive_controls": { "type": "array", "items": { "type": "string" } },
+            "negative_controls": { "type": "array", "items": { "type": "string" } },
+            "extraction_blanks": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "computation_time_seconds": { "type": "number" },
+        "engine_exit_code": { "type": "integer" },
+        "engine_stderr": { "type": "string" },
+        "engine_stdout": { "type": "string" },
+        "engine_command": { "type": "string" }
+      }
+    }
+  }
+}

@@ -98,8 +98,8 @@ static void test_e2e_pipeline(void) {
         halal_report_t *report = report_generate(em, idx->db, results, sr->n_reads, 0.001);
         ASSERT(report != NULL, "Report generated");
 
-        /* Verdict should be FAIL (pork detected) */
-        ASSERT(report->verdict == FAIL, "Verdict is FAIL (haram detected)");
+        /* Screening should alert when a configured exclusion species is detected. */
+        ASSERT(report->screening_result == SCREEN_ALERT, "Screening result is ALERT");
 
         /* Pork should be detected above threshold */
         int pork2 = refdb_find_species(idx->db, "Sus_scrofa");
@@ -126,9 +126,9 @@ static void test_e2e_pipeline(void) {
     refdb_destroy(db);
 }
 
-/* Test pure halal sample */
-static void test_e2e_halal_pass(void) {
-    printf("  test_e2e_halal_pass...\n");
+/* Test pure reference-category sample */
+static void test_e2e_reference_clear(void) {
+    printf("  test_e2e_reference_clear...\n");
 
     halal_refdb_t *db = refdb_build_default();
     halal_refdb_t *db2 = refdb_build_default();
@@ -172,8 +172,8 @@ static void test_e2e_halal_pass(void) {
         if (em) {
             halal_report_t *report = report_generate(em, idx->db, results,
                                                       sr->n_reads, 0.001);
-            /* Pure beef should pass or be inconclusive (not fail) */
-            ASSERT(report->verdict != FAIL, "Pure beef not FAIL");
+            /* Pure beef should not alert. */
+            ASSERT(report->screening_result != SCREEN_ALERT, "Pure beef does not alert");
             report_destroy(report);
             em_result_destroy(em);
         }
@@ -230,7 +230,7 @@ static void test_calibration(void) {
 int main(void) {
     printf("=== test_integration ===\n");
     test_e2e_pipeline();
-    test_e2e_halal_pass();
+    test_e2e_reference_clear();
     test_degradation();
     test_calibration();
     printf("=== %d passed, %d failed ===\n", tests_passed, tests_failed);

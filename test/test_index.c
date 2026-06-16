@@ -32,22 +32,22 @@ static void test_refdb_create(void) {
     printf("  test_refdb_create...\n");
     halal_refdb_t *db = refdb_build_default();
     ASSERT(db != NULL, "Default db created");
-    ASSERT(db->n_species == 19, "19 species");
-    ASSERT(db->n_markers == 3, "3 markers");
+    ASSERT(db->n_species == 36, "36 species");
+    ASSERT(db->n_markers == 4, "4 markers");
     ASSERT(db->n_marker_refs > 0, "Has marker refs");
 
     /* Check species */
     int pork = refdb_find_species(db, "Sus_scrofa");
     ASSERT(pork >= 0, "Found Sus_scrofa");
-    ASSERT(db->species[pork].status == HARAM, "Pork is HARAM");
+    ASSERT(db->species[pork].category == CATEGORY_EXCLUSION, "Pork is an exclusion species");
 
     int beef = refdb_find_species(db, "Bos_taurus");
     ASSERT(beef >= 0, "Found Bos_taurus");
-    ASSERT(db->species[beef].status == HALAL, "Beef is HALAL");
+    ASSERT(db->species[beef].category == CATEGORY_REFERENCE, "Beef is a reference species");
 
     int horse = refdb_find_species(db, "Equus_caballus");
     ASSERT(horse >= 0, "Found Equus_caballus");
-    ASSERT(db->species[horse].status == MASHBOOH, "Horse is MASHBOOH");
+    ASSERT(db->species[horse].category == CATEGORY_REVIEW, "Horse requires review");
 
     refdb_destroy(db);
 }

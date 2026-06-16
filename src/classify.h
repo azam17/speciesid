@@ -15,15 +15,29 @@ typedef struct {
     int is_classified;
 } read_result_t;
 
+/* Read mode: auto-detect, force short (Illumina), or force long (Nanopore/PacBio) */
+typedef enum {
+    READ_MODE_AUTO  = 0,
+    READ_MODE_SHORT = 1,
+    READ_MODE_LONG  = 2
+} read_mode_t;
+
 typedef struct {
     double min_containment;   /* Minimum containment to report (Illumina: 0.3) */
     double coarse_threshold;  /* Coarse filter threshold (default: 0.05) */
     int is_nanopore;
     int n_threads;
+    read_mode_t read_mode;    /* AUTO / SHORT / LONG */
+    int lr_window_size;       /* Long-read window size (default: 300) */
+    int lr_window_stride;     /* Long-read window stride (default: 150) */
 } classify_opts_t;
 
 classify_opts_t classify_opts_default(void);
 classify_opts_t classify_opts_nanopore(void);
+classify_opts_t classify_opts_longread(void);
+
+/* Auto-detect read mode from a batch of read lengths */
+read_mode_t classify_detect_read_mode(const int *lens, int n_reads);
 
 /* Classify a batch of reads against the index */
 read_result_t *classify_reads(const halal_index_t *idx,

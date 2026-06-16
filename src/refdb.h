@@ -9,12 +9,17 @@
 #define HS_MAX_NAME_LEN 64
 #define HS_MAX_PRIMER_LEN 64
 
-typedef enum { HALAL = 0, HARAM = 1, MASHBOOH = 2, HS_STATUS_UNKNOWN = 3 } halal_status_t;
+typedef enum {
+    CATEGORY_REFERENCE = 0,
+    CATEGORY_EXCLUSION = 1,
+    CATEGORY_REVIEW = 2,
+    CATEGORY_UNKNOWN = 3
+} species_category_t;
 
 typedef struct {
     char species_id[HS_MAX_NAME_LEN];
     char common_name[HS_MAX_NAME_LEN];
-    halal_status_t status;
+    species_category_t category;
     double mito_copy_number;
     double dna_yield_prior;
 } species_info_t;
@@ -42,7 +47,7 @@ typedef struct {
 /* Build reference database from a species TSV and FASTA directory */
 halal_refdb_t *refdb_create(void);
 int refdb_add_species(halal_refdb_t *db, const char *species_id,
-                      const char *common_name, halal_status_t status,
+                      const char *common_name, species_category_t category,
                       double mito_cn, double yield_prior);
 int refdb_add_marker(halal_refdb_t *db, const char *marker_id,
                      const char *primer_f, const char *primer_r);
@@ -58,14 +63,14 @@ void refdb_destroy(halal_refdb_t *db);
 int refdb_find_species(const halal_refdb_t *db, const char *species_id);
 int refdb_find_marker(const halal_refdb_t *db, const char *marker_id);
 marker_ref_t *refdb_get_marker_ref(const halal_refdb_t *db, int species_idx, int marker_idx);
-const char *halal_status_str(halal_status_t s);
+const char *species_category_str(species_category_t category);
 
-/* Build a default database with built-in halal food species */
+/* Build a default database with built-in food authentication species */
 halal_refdb_t *refdb_build_default(void);
 
 /* Build database from a FASTA directory.
  * Expects files named: Species_name_MARKER.fa (e.g., Bos_taurus_COI.fa)
- * Species metadata (halal status, mito CN) uses built-in defaults. */
+ * Species metadata (screening category, mito CN) uses built-in defaults. */
 halal_refdb_t *refdb_build_from_fasta_dir(const char *fasta_dir);
 
 #endif /* SPECIESID_REFDB_H */
