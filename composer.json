@@ -1,0 +1,25 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "speciesid/forge-bridge",
+    "type": "project",
+    "description": "Forge deployment bridge for the SpeciesID Laravel app in web/.",
+    "license": "MIT",
+    "require": {},
+    "scripts": {
+        "post-install-cmd": [
+            "cd web && composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader"
+        ],
+        "post-update-cmd": [
+            "cd web && composer update --no-interaction --prefer-dist"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        },
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}

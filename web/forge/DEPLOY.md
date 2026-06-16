@@ -29,7 +29,20 @@ for local lab use.
 
 ### 2. Site Configuration
 
-**Root Directory:** `/public` (Laravel default)
+**Root Directory:** `/public`
+
+The repository keeps the Laravel application in `web/` so the C engine can stay
+at the repository root. The root `composer.json`, `artisan`, and `public/`
+files are deployment bridges for Forge:
+
+- Forge may run Composer from the repository root. The root Composer bridge
+  installs the real Laravel dependencies in `web/`.
+- Forge may serve `/public`. The root `public/index.php` forwards requests to
+  `web/public/index.php`.
+- Forge may call root `artisan`. The root `artisan` forwards to `web/artisan`.
+
+If you configure Forge manually to use `web/` as the project path, these bridges
+are harmless but not required.
 
 **Nginx Configuration** — add to Forge's "Edit Nginx Configuration":
 
