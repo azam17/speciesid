@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "speciesid-forge-bridge",
+  "description": "Forge npm bridge for the SpeciesID Laravel frontend in web/.",
+  "scripts": {
+    "postinstall": "cd web && npm ci",
+    "build": "cd web && npm run build",
+    "dev": "cd web && npm run dev"
+  }
+}

@@ -28,6 +28,7 @@ data/benchmark/opsonx/
 # Node (used for some dev tooling)
 node_modules/
 package-lock.json
+!package-lock.json
 
 # IDE / editor
 .vscode/
