@@ -97,6 +97,34 @@ class SpeciesIdWorkflowTest extends TestCase
         $response->assertSessionHasErrors('samples');
     }
 
+    public function test_engine_manifest_omits_null_sample_labels(): void
+    {
+        Storage::fake('fastq');
+        $user = User::factory()->create();
+        $database = $this->referenceDatabase();
+
+        $run = Run::create([
+            'user_id' => $user->id,
+            'reference_database_id' => $database->id,
+            'status' => 'pending',
+            'label' => 'Unlabeled sample run',
+            'marker_panel' => ['16S'],
+        ]);
+
+        Sample::create([
+            'run_id' => $run->id,
+            'sample_id' => 'sample_1',
+            'role' => 'sample',
+            'label' => null,
+            'fastq_path' => 'runs/test/sample.fq',
+        ]);
+
+        $manifest = app(SpeciesIDEngine::class)->buildManifest($run);
+
+        $this->assertArrayNotHasKey('label', $manifest['samples'][0]);
+        $this->assertSame('sample_1', $manifest['samples'][0]['sample_id']);
+    }
+
     public function test_engine_rejects_schema_invalid_results(): void
     {
         $engine = app(SpeciesIDEngine::class);

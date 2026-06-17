@@ -35,13 +35,18 @@ class SpeciesIDEngine
                 $metadata = new \stdClass;
             }
 
-            return [
+            $manifestSample = [
                 'sample_id' => $sample->sample_id,
                 'role' => $sample->role,
                 'fastq_path' => Storage::disk('fastq')->path($sample->fastq_path),
-                'label' => $sample->label,
                 'metadata' => $metadata,
             ];
+
+            if (is_string($sample->label) && $sample->label !== '') {
+                $manifestSample['label'] = $sample->label;
+            }
+
+            return $manifestSample;
         })->toArray();
 
         $analysisParams = $run->analysis_params ?? [];
