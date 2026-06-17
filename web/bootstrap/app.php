@@ -24,6 +24,10 @@ $rootEnvPath = dirname(__DIR__, 2);
 
 if (file_exists($rootEnvPath.'/.env')) {
     $app->useEnvironmentPath($rootEnvPath);
+
+    if (is_dir($rootEnvPath.'/storage')) {
+        $app->useStoragePath($rootEnvPath.'/storage');
+    }
 }
 
 return $app;
