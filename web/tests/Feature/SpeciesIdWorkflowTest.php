@@ -117,11 +117,19 @@ class SpeciesIdWorkflowTest extends TestCase
             'role' => 'sample',
             'label' => null,
             'fastq_path' => 'runs/test/sample.fq',
+            'metadata' => [
+                'product_type' => null,
+                'claimed_species' => ['beef', null, ''],
+                'notes' => '',
+            ],
         ]);
 
         $manifest = app(SpeciesIDEngine::class)->buildManifest($run);
 
         $this->assertArrayNotHasKey('label', $manifest['samples'][0]);
+        $this->assertArrayNotHasKey('product_type', $manifest['samples'][0]['metadata']);
+        $this->assertArrayNotHasKey('notes', $manifest['samples'][0]['metadata']);
+        $this->assertSame(['beef'], $manifest['samples'][0]['metadata']['claimed_species']);
         $this->assertSame('sample_1', $manifest['samples'][0]['sample_id']);
     }
 

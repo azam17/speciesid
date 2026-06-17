@@ -30,7 +30,7 @@ class SpeciesIDEngine
         $run->load('referenceDatabase', 'calibrationProfile', 'samples');
 
         $samples = $run->samples->map(function (Sample $sample) {
-            $metadata = $sample->metadata ?? [];
+            $metadata = $this->cleanManifestValue($sample->metadata ?? []);
             if ($metadata === []) {
                 $metadata = new \stdClass;
             }
@@ -49,8 +49,8 @@ class SpeciesIDEngine
             return $manifestSample;
         })->toArray();
 
-        $analysisParams = $run->analysis_params ?? [];
-        $runMetadata = $run->run_metadata ?? [];
+        $analysisParams = $this->cleanManifestValue($run->analysis_params ?? []);
+        $runMetadata = $this->cleanManifestValue($run->run_metadata ?? []);
         if ($analysisParams === []) {
             $analysisParams = new \stdClass;
         }
@@ -77,6 +77,28 @@ class SpeciesIDEngine
         $this->validateManifest($manifest);
 
         return $manifest;
+    }
+
+    protected function cleanManifestValue(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            $isList = array_is_list($value);
+            $clean = [];
+
+            foreach ($value as $key => $item) {
+                $item = $this->cleanManifestValue($item);
+
+                if ($item === null || $item === '' || $item === []) {
+                    continue;
+                }
+
+                $clean[$key] = $item;
+            }
+
+            return $isList ? array_values($clean) : $clean;
+        }
+
+        return $value;
     }
 
     /**
