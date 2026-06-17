@@ -18,10 +18,17 @@ typedef struct {
     halal_report_t *report;
 } sample_result_v1_t;
 
-static int set_err(char *err, size_t err_sz, const char *msg) {
-    if (err && err_sz > 0) {
-        snprintf(err, err_sz, "%s", msg);
+static void copy_cstr(char *dst, size_t dst_sz, const char *src) {
+    if (!dst || dst_sz == 0) return;
+    size_t i = 0;
+    if (src) {
+        for (; i + 1 < dst_sz && src[i] != '\0'; i++) dst[i] = src[i];
     }
+    dst[i] = '\0';
+}
+
+static int set_err(char *err, size_t err_sz, const char *msg) {
+    copy_cstr(err, err_sz, msg ? msg : "");
     return -1;
 }
 
@@ -278,7 +285,9 @@ static int parse_marker_panel(const char *json, const char *end,
             snprintf(msg, sizeof(msg), "unknown marker in marker_panel: %s", marker);
             return set_err(err, err_sz, msg);
         }
-        strncpy(m->marker_ids[m->n_markers++], marker, 15);
+        copy_cstr(m->marker_ids[m->n_markers],
+                  sizeof(m->marker_ids[m->n_markers]), marker);
+        m->n_markers++;
         p = skip_ws(p, arr_end);
         if (p < arr_end && *p == ',') p++;
     }
@@ -443,10 +452,7 @@ static int analyze_sample(const analyze_manifest_t *manifest,
     char **seqs = NULL, **names = NULL;
     int *lens = NULL, n_reads = 0;
     if (hs_fasta_read_all(sample->fastq_path, &seqs, &names, &lens, &n_reads) < 0) {
-        char msg[ANALYZE_MAX_PATH + 128];
-        snprintf(msg, sizeof(msg), "failed to read FASTQ for %s: %s",
-                 sample->sample_id, sample->fastq_path);
-        return set_err(err, err_sz, msg);
+        return set_err(err, err_sz, "failed to read FASTQ for manifest sample");
     }
 
     classify_opts_t copts;
