@@ -245,6 +245,10 @@ int index_detect_marker_lr(const halal_index_t *idx, const char *seq, int len) {
 #define INDEX_MAGIC 0x48494458  /* "HIDX" */
 #define INDEX_VERSION 3
 
+static int read_exact(FILE *fp, void *ptr, size_t size, size_t nitems) {
+    return fread(ptr, size, nitems, fp) == nitems ? 0 : -1;
+}
+
 /* Helper: write a kmer_set_t array to file */
 static void write_kmer_sets(FILE *fp, kmer_set_t ***sets, int n_outer, int n_inner) {
     for (int m = 0; m < n_outer; m++) {
@@ -274,13 +278,13 @@ static kmer_set_t ***read_kmer_sets(FILE *fp, int n_outer, int n_inner) {
         sets[m] = (kmer_set_t **)hs_calloc((size_t)n_inner, sizeof(kmer_set_t *));
         for (int s = 0; s < n_inner; s++) {
             int n, k;
-            fread(&n, sizeof(int), 1, fp);
-            fread(&k, sizeof(int), 1, fp);
+            if (read_exact(fp, &n, sizeof(int), 1) < 0 ||
+                read_exact(fp, &k, sizeof(int), 1) < 0) return sets;
             if (n > 0) {
                 sets[m][s] = kmer_set_init(k);
                 for (int j = 0; j < n; j++) {
                     uint64_t key;
-                    fread(&key, sizeof(uint64_t), 1, fp);
+                    if (read_exact(fp, &key, sizeof(uint64_t), 1) < 0) return sets;
                     int ret;
                     kh_put(kmer64, sets[m][s]->h, key, &ret);
                     sets[m][s]->n_kmers++;
@@ -376,40 +380,41 @@ halal_index_t *index_load(const char *path) {
     FILE *fp = fopen(path, "rb");
     if (!fp) return NULL;
     uint32_t magic, version;
-    if (fread(&magic, 4, 1, fp) != 1 || magic != INDEX_MAGIC) { fclose(fp); return NULL; }
-    if (fread(&version, 4, 1, fp) != 1 || (version != 2 && version != INDEX_VERSION)) {
+    if (read_exact(fp, &magic, 4, 1) < 0 || magic != INDEX_MAGIC) { fclose(fp); return NULL; }
+    if (read_exact(fp, &version, 4, 1) < 0 || (version != 2 && version != INDEX_VERSION)) {
         fclose(fp); return NULL;
     }
 
     halal_index_t *idx = (halal_index_t *)hs_calloc(1, sizeof(halal_index_t));
-    fread(&idx->coarse_k, sizeof(int), 1, fp);
-    fread(&idx->fine_k, sizeof(int), 1, fp);
-    fread(&idx->coarse_scale, sizeof(double), 1, fp);
+    if (read_exact(fp, &idx->coarse_k, sizeof(int), 1) < 0) goto fail;
+    if (read_exact(fp, &idx->fine_k, sizeof(int), 1) < 0) goto fail;
+    if (read_exact(fp, &idx->coarse_scale, sizeof(double), 1) < 0) goto fail;
 
     /* Load refdb */
     int S, M;
-    fread(&S, sizeof(int), 1, fp);
-    fread(&M, sizeof(int), 1, fp);
+    if (read_exact(fp, &S, sizeof(int), 1) < 0) goto fail;
+    if (read_exact(fp, &M, sizeof(int), 1) < 0) goto fail;
 
     halal_refdb_t *db = refdb_create();
     db->n_species = S;
     db->n_markers = M;
     db->species = (species_info_t *)hs_malloc((size_t)S * sizeof(species_info_t));
-    fread(db->species, sizeof(species_info_t), (size_t)S, fp);
-    fread(db->marker_ids, sizeof(db->marker_ids), 1, fp);
-    fread(db->primer_f, sizeof(db->primer_f), 1, fp);
-    fread(db->primer_r, sizeof(db->primer_r), 1, fp);
-    fread(&db->threshold_wpw, sizeof(double), 1, fp);
+    if (read_exact(fp, db->species, sizeof(species_info_t), (size_t)S) < 0) goto fail;
+    if (read_exact(fp, db->marker_ids, sizeof(db->marker_ids), 1) < 0) goto fail;
+    if (read_exact(fp, db->primer_f, sizeof(db->primer_f), 1) < 0) goto fail;
+    if (read_exact(fp, db->primer_r, sizeof(db->primer_r), 1) < 0) goto fail;
+    if (read_exact(fp, &db->threshold_wpw, sizeof(double), 1) < 0) goto fail;
 
-    fread(&db->n_marker_refs, sizeof(int), 1, fp);
+    if (read_exact(fp, &db->n_marker_refs, sizeof(int), 1) < 0) goto fail;
     db->markers = (marker_ref_t *)hs_malloc((size_t)db->n_marker_refs * sizeof(marker_ref_t));
     for (int i = 0; i < db->n_marker_refs; i++) {
-        fread(&db->markers[i].species_idx, sizeof(int), 1, fp);
-        fread(&db->markers[i].marker_idx, sizeof(int), 1, fp);
-        fread(&db->markers[i].seq_len, sizeof(int), 1, fp);
-        fread(&db->markers[i].amplicon_length, sizeof(int), 1, fp);
+        if (read_exact(fp, &db->markers[i].species_idx, sizeof(int), 1) < 0) goto fail;
+        if (read_exact(fp, &db->markers[i].marker_idx, sizeof(int), 1) < 0) goto fail;
+        if (read_exact(fp, &db->markers[i].seq_len, sizeof(int), 1) < 0) goto fail;
+        if (read_exact(fp, &db->markers[i].amplicon_length, sizeof(int), 1) < 0) goto fail;
         db->markers[i].sequence = (char *)hs_malloc((size_t)db->markers[i].seq_len + 1);
-        fread(db->markers[i].sequence, 1, (size_t)db->markers[i].seq_len, fp);
+        if (read_exact(fp, db->markers[i].sequence, 1,
+                       (size_t)db->markers[i].seq_len) < 0) goto fail;
         db->markers[i].sequence[db->markers[i].seq_len] = '\0';
     }
     idx->db = db;
@@ -418,13 +423,14 @@ halal_index_t *index_load(const char *path) {
     idx->coarse = (fmh_sketch_t **)hs_calloc((size_t)S, sizeof(fmh_sketch_t *));
     for (int s = 0; s < S; s++) {
         idx->coarse[s] = fmh_init(idx->coarse_k, idx->coarse_scale);
-        fread(&idx->coarse[s]->n, sizeof(int), 1, fp);
+        if (read_exact(fp, &idx->coarse[s]->n, sizeof(int), 1) < 0) goto fail;
         if (idx->coarse[s]->n > idx->coarse[s]->cap) {
             idx->coarse[s]->cap = idx->coarse[s]->n;
             idx->coarse[s]->hashes = (uint64_t *)hs_realloc(
                 idx->coarse[s]->hashes, (size_t)idx->coarse[s]->n * sizeof(uint64_t));
         }
-        fread(idx->coarse[s]->hashes, sizeof(uint64_t), (size_t)idx->coarse[s]->n, fp);
+        if (read_exact(fp, idx->coarse[s]->hashes, sizeof(uint64_t),
+                       (size_t)idx->coarse[s]->n) < 0) goto fail;
     }
 
     /* Load fine k-mer sets */
@@ -446,26 +452,26 @@ halal_index_t *index_load(const char *path) {
     /* Load long-read sub-index (v3+) or skip (v2) */
     idx->has_longread_index = 0;
     if (version >= 3) {
-        fread(&idx->has_longread_index, sizeof(int), 1, fp);
+        if (read_exact(fp, &idx->has_longread_index, sizeof(int), 1) < 0) goto fail;
         if (idx->has_longread_index) {
-            fread(&idx->lr_coarse_k, sizeof(int), 1, fp);
-            fread(&idx->lr_fine_k, sizeof(int), 1, fp);
-            fread(&idx->lr_primer_k, sizeof(int), 1, fp);
-            fread(&idx->lr_coarse_scale, sizeof(double), 1, fp);
+            if (read_exact(fp, &idx->lr_coarse_k, sizeof(int), 1) < 0) goto fail;
+            if (read_exact(fp, &idx->lr_fine_k, sizeof(int), 1) < 0) goto fail;
+            if (read_exact(fp, &idx->lr_primer_k, sizeof(int), 1) < 0) goto fail;
+            if (read_exact(fp, &idx->lr_coarse_scale, sizeof(double), 1) < 0) goto fail;
 
             /* LR coarse sketches */
             idx->lr_coarse = (fmh_sketch_t **)hs_calloc((size_t)S, sizeof(fmh_sketch_t *));
             for (int s = 0; s < S; s++) {
                 idx->lr_coarse[s] = fmh_init(idx->lr_coarse_k, idx->lr_coarse_scale);
-                fread(&idx->lr_coarse[s]->n, sizeof(int), 1, fp);
+                if (read_exact(fp, &idx->lr_coarse[s]->n, sizeof(int), 1) < 0) goto fail;
                 if (idx->lr_coarse[s]->n > idx->lr_coarse[s]->cap) {
                     idx->lr_coarse[s]->cap = idx->lr_coarse[s]->n;
                     idx->lr_coarse[s]->hashes = (uint64_t *)hs_realloc(
                         idx->lr_coarse[s]->hashes,
                         (size_t)idx->lr_coarse[s]->n * sizeof(uint64_t));
                 }
-                fread(idx->lr_coarse[s]->hashes, sizeof(uint64_t),
-                      (size_t)idx->lr_coarse[s]->n, fp);
+                if (read_exact(fp, idx->lr_coarse[s]->hashes, sizeof(uint64_t),
+                               (size_t)idx->lr_coarse[s]->n) < 0) goto fail;
             }
 
             /* LR fine k-mer sets */
@@ -475,13 +481,13 @@ halal_index_t *index_load(const char *path) {
             idx->lr_primer = (kmer_set_t **)hs_calloc((size_t)M, sizeof(kmer_set_t *));
             for (int m = 0; m < M; m++) {
                 int n, k;
-                fread(&n, sizeof(int), 1, fp);
-                fread(&k, sizeof(int), 1, fp);
+                if (read_exact(fp, &n, sizeof(int), 1) < 0) goto fail;
+                if (read_exact(fp, &k, sizeof(int), 1) < 0) goto fail;
                 if (n > 0) {
                     idx->lr_primer[m] = kmer_set_init(k);
                     for (int j = 0; j < n; j++) {
                         uint64_t key;
-                        fread(&key, sizeof(uint64_t), 1, fp);
+                        if (read_exact(fp, &key, sizeof(uint64_t), 1) < 0) goto fail;
                         int ret;
                         kh_put(kmer64, idx->lr_primer[m]->h, key, &ret);
                         idx->lr_primer[m]->n_kmers++;
@@ -493,5 +499,10 @@ halal_index_t *index_load(const char *path) {
         }
     }
 
+    fclose(fp);
     return idx;
+
+fail:
+    fclose(fp);
+    return NULL;
 }
