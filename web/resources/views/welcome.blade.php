@@ -127,7 +127,7 @@
                     </div>
                 </section>
 
-                <section id="how" class="border-y border-slate-900/10 bg-white">
+                <section id="how" class="scroll-mt-20 border-y border-slate-900/10 bg-white">
                     <div class="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8">
                         <div class="grid gap-10 lg:grid-cols-[0.55fr_1fr]">
                             <div>
@@ -146,6 +146,99 @@
                                         <h3 class="mt-4 text-lg font-extrabold text-slate-950">{{ $title }}</h3>
                                         <p class="mt-2 text-sm leading-6 text-slate-600">{{ $body }}</p>
                                     </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        @php
+                            $howItWorksStages = [
+                                [
+                                    'number' => '1',
+                                    'title' => 'The Reference Library',
+                                    'summary' => 'Builds the DNA reference dictionary before any sample is tested.',
+                                    'image' => 'how-it-works/stage-1.webp',
+                                    'alt' => 'SpeciesID how it works stage 1, showing the reference library with mitochondrial markers and indexed species records.',
+                                ],
+                                [
+                                    'number' => '2',
+                                    'title' => 'Reading the Input',
+                                    'summary' => 'Reads FASTQ files directly and turns reads into overlapping k-mers.',
+                                    'image' => 'how-it-works/stage-2.webp',
+                                    'alt' => 'SpeciesID how it works stage 2, showing FASTQ input reads and sliding-window k-mer generation.',
+                                ],
+                                [
+                                    'number' => '3',
+                                    'title' => 'The Fast Scan',
+                                    'summary' => 'Quickly rules out unlikely species before deeper matching.',
+                                    'image' => 'how-it-works/stage-3.webp',
+                                    'alt' => 'SpeciesID how it works stage 3, showing the FracMinHash fast scan reducing all species to candidate species.',
+                                ],
+                                [
+                                    'number' => '4',
+                                    'title' => 'The Close Look',
+                                    'summary' => 'Verifies the surviving candidates with detailed marker-aware matching.',
+                                    'image' => 'how-it-works/stage-4.webp',
+                                    'alt' => 'SpeciesID how it works stage 4, showing close-look matching across COI, cytb, 16S, and 12S markers.',
+                                ],
+                                [
+                                    'number' => '5',
+                                    'title' => 'Approximate Species Signals',
+                                    'summary' => 'Converts classified reads into model-estimated species signals.',
+                                    'image' => 'how-it-works/stage-5.webp',
+                                    'alt' => 'SpeciesID how it works stage 5, showing EM estimation from classified reads to approximate species signals.',
+                                ],
+                                [
+                                    'number' => '6',
+                                    'title' => 'Checking the Math',
+                                    'summary' => 'Measures uncertainty and confidence before reporting the result.',
+                                    'image' => 'how-it-works/stage-6.webp',
+                                    'alt' => 'SpeciesID how it works stage 6, showing confidence intervals, presence tests, bootstrap stability, and model comparison.',
+                                ],
+                                [
+                                    'number' => '7',
+                                    'title' => 'The Screening State',
+                                    'summary' => 'Turns the evidence list into CLEAR, REVIEW, or ALERT.',
+                                    'image' => 'how-it-works/stage-7.webp',
+                                    'alt' => 'SpeciesID how it works stage 7, showing final screening states clear, alert, and review with report summary.',
+                                ],
+                            ];
+                        @endphp
+
+                        <div class="mt-14 border-t border-slate-900/10 pt-12">
+                            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <p class="text-sm font-extrabold uppercase tracking-widest text-brand-700">Stage-by-stage walkthrough</p>
+                                    <h3 class="mt-3 max-w-3xl text-3xl font-extrabold leading-tight tracking-normal text-slate-950 sm:text-4xl">
+                                        See the full seven-stage SpeciesID screening flow.
+                                    </h3>
+                                </div>
+                                <p class="max-w-xl text-sm leading-6 text-slate-600">
+                                    These panels explain the algorithm path from reference setup to the final screening state, using language intended for lab operators and reviewers.
+                                </p>
+                            </div>
+
+                            <div class="mt-8 grid gap-6">
+                                @foreach ($howItWorksStages as $stage)
+                                    <article class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-900/10 bg-[#f7f8f4] shadow-sm shadow-slate-900/5">
+                                        <div class="flex flex-col gap-3 border-b border-slate-900/10 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <p class="text-xs font-extrabold uppercase tracking-widest text-brand-700">Stage {{ $stage['number'] }} of 7</p>
+                                                <h4 class="mt-1 text-xl font-extrabold text-slate-950">{{ $stage['title'] }}</h4>
+                                            </div>
+                                            <p class="max-w-2xl text-sm leading-6 text-slate-600">{{ $stage['summary'] }}</p>
+                                        </div>
+                                        <a href="{{ asset($stage['image']) }}" target="_blank" rel="noopener" class="block bg-white">
+                                            <img
+                                                src="{{ asset($stage['image']) }}"
+                                                alt="{{ $stage['alt'] }}"
+                                                width="1448"
+                                                height="1086"
+                                                loading="{{ $loop->first ? 'eager' : 'lazy' }}"
+                                                decoding="async"
+                                                class="h-auto w-full"
+                                            >
+                                        </a>
+                                    </article>
                                 @endforeach
                             </div>
                         </div>
