@@ -8,6 +8,10 @@
 #define REFDB_MAGIC  0x48414C41  /* "HALA" */
 #define REFDB_VERSION 1
 
+static int read_exact(FILE *fp, void *ptr, size_t size, size_t nitems) {
+    return fread(ptr, size, nitems, fp) == nitems ? 0 : -1;
+}
+
 const char *species_category_str(species_category_t category) {
     switch (category) {
         case CATEGORY_REFERENCE: return "REFERENCE";
@@ -126,35 +130,42 @@ halal_refdb_t *refdb_load(const char *path) {
     FILE *fp = fopen(path, "rb");
     if (!fp) return NULL;
     uint32_t magic, version;
-    if (fread(&magic, 4, 1, fp) != 1 || magic != REFDB_MAGIC) { fclose(fp); return NULL; }
-    if (fread(&version, 4, 1, fp) != 1 || version != REFDB_VERSION) { fclose(fp); return NULL; }
+    if (read_exact(fp, &magic, 4, 1) < 0 || magic != REFDB_MAGIC) { fclose(fp); return NULL; }
+    if (read_exact(fp, &version, 4, 1) < 0 || version != REFDB_VERSION) { fclose(fp); return NULL; }
 
     halal_refdb_t *db = refdb_create();
 
-    fread(&db->n_species, sizeof(int), 1, fp);
+    if (read_exact(fp, &db->n_species, sizeof(int), 1) < 0) goto fail;
     db->species = (species_info_t *)hs_malloc((size_t)db->n_species * sizeof(species_info_t));
-    fread(db->species, sizeof(species_info_t), (size_t)db->n_species, fp);
+    if (read_exact(fp, db->species, sizeof(species_info_t),
+                   (size_t)db->n_species) < 0) goto fail;
 
-    fread(&db->n_markers, sizeof(int), 1, fp);
-    fread(db->marker_ids, sizeof(db->marker_ids), 1, fp);
-    fread(db->primer_f, sizeof(db->primer_f), 1, fp);
-    fread(db->primer_r, sizeof(db->primer_r), 1, fp);
+    if (read_exact(fp, &db->n_markers, sizeof(int), 1) < 0) goto fail;
+    if (read_exact(fp, db->marker_ids, sizeof(db->marker_ids), 1) < 0) goto fail;
+    if (read_exact(fp, db->primer_f, sizeof(db->primer_f), 1) < 0) goto fail;
+    if (read_exact(fp, db->primer_r, sizeof(db->primer_r), 1) < 0) goto fail;
 
-    fread(&db->n_marker_refs, sizeof(int), 1, fp);
+    if (read_exact(fp, &db->n_marker_refs, sizeof(int), 1) < 0) goto fail;
     db->markers = (marker_ref_t *)hs_malloc((size_t)db->n_marker_refs * sizeof(marker_ref_t));
     for (int i = 0; i < db->n_marker_refs; i++) {
-        fread(&db->markers[i].species_idx, sizeof(int), 1, fp);
-        fread(&db->markers[i].marker_idx, sizeof(int), 1, fp);
-        fread(&db->markers[i].seq_len, sizeof(int), 1, fp);
-        fread(&db->markers[i].amplicon_length, sizeof(int), 1, fp);
+        if (read_exact(fp, &db->markers[i].species_idx, sizeof(int), 1) < 0) goto fail;
+        if (read_exact(fp, &db->markers[i].marker_idx, sizeof(int), 1) < 0) goto fail;
+        if (read_exact(fp, &db->markers[i].seq_len, sizeof(int), 1) < 0) goto fail;
+        if (read_exact(fp, &db->markers[i].amplicon_length, sizeof(int), 1) < 0) goto fail;
         db->markers[i].sequence = (char *)hs_malloc((size_t)db->markers[i].seq_len + 1);
-        fread(db->markers[i].sequence, 1, (size_t)db->markers[i].seq_len, fp);
+        if (read_exact(fp, db->markers[i].sequence, 1,
+                       (size_t)db->markers[i].seq_len) < 0) goto fail;
         db->markers[i].sequence[db->markers[i].seq_len] = '\0';
     }
 
-    fread(&db->threshold_wpw, sizeof(double), 1, fp);
+    if (read_exact(fp, &db->threshold_wpw, sizeof(double), 1) < 0) goto fail;
     fclose(fp);
     return db;
+
+fail:
+    fclose(fp);
+    refdb_destroy(db);
+    return NULL;
 }
 
 void refdb_destroy(halal_refdb_t *db) {
