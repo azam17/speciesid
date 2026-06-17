@@ -13,12 +13,21 @@ const char *screening_result_str(screening_result_t result) {
     return "UNKNOWN";
 }
 
+static void copy_cstr(char *dst, size_t dst_sz, const char *src) {
+    if (!dst || dst_sz == 0) return;
+    size_t i = 0;
+    if (src) {
+        for (; i + 1 < dst_sz && src[i] != '\0'; i++) dst[i] = src[i];
+    }
+    dst[i] = '\0';
+}
+
 halal_report_t *report_generate(const em_result_t *em,
                                  const halal_refdb_t *db,
                                  const read_result_t *classifications,
                                  int n_reads, double threshold) {
     halal_report_t *r = (halal_report_t *)hs_calloc(1, sizeof(halal_report_t));
-    strncpy(r->sample_id, "sample", sizeof(r->sample_id) - 1);
+    copy_cstr(r->sample_id, sizeof(r->sample_id), "sample");
     r->threshold_wpw = threshold;
     r->total_reads = n_reads;
     r->bootstrap_stability_pct = 0;
@@ -67,7 +76,8 @@ halal_report_t *report_generate(const em_result_t *em,
         if (markers_seen[m]) n_markers_tested++;
 
     for (int s = 0; s < r->n_species; s++) {
-        strncpy(r->species[s].species_id, db->species[s].species_id, HS_MAX_NAME_LEN - 1);
+        copy_cstr(r->species[s].species_id, sizeof(r->species[s].species_id),
+                  db->species[s].species_id);
         r->species[s].species_category = db->species[s].category;
         r->species[s].weight_pct = em->w[s] * 100.0;
         r->species[s].ci_lo = em->w_ci_lo[s] * 100.0;
