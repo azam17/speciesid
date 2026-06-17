@@ -101,7 +101,9 @@ class SpeciesIdWorkflowTest extends TestCase
     {
         Storage::fake('fastq');
         $user = User::factory()->create();
-        $database = $this->referenceDatabase();
+        $database = $this->referenceDatabase([
+            'index_path' => '/tmp/speciesid/default.idx',
+        ]);
 
         $run = Run::create([
             'user_id' => $user->id,
@@ -134,6 +136,7 @@ class SpeciesIdWorkflowTest extends TestCase
 
         $manifest = app(SpeciesIDEngine::class)->buildManifest($run);
 
+        $this->assertSame('/tmp/speciesid/default.idx', $manifest['index_path']);
         $this->assertArrayNotHasKey('label', $manifest['samples'][0]);
         $this->assertArrayNotHasKey('product_type', $manifest['samples'][0]['metadata']);
         $this->assertArrayNotHasKey('notes', $manifest['samples'][0]['metadata']);

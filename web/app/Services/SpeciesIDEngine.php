@@ -65,22 +65,29 @@ class SpeciesIDEngine
         $manifest = [
             'manifest_version' => '1.0.0',
             'run_id' => (string) $run->uuid,
-            'index_path' => Storage::disk('indexes')->path(
-                $run->referenceDatabase->index_path
-            ),
+            'index_path' => $this->diskPath('indexes', $run->referenceDatabase->index_path),
             'database_hash' => $run->referenceDatabase->sha256_hash,
             'marker_panel' => $run->marker_panel,
             'samples' => $samples,
             'analysis_params' => $analysisParams,
             'run_metadata' => $runMetadata,
             'calibration_profile_path' => $run->calibrationProfile
-                ? Storage::disk('calibrations')->path($run->calibrationProfile->file_path)
+                ? $this->diskPath('calibrations', $run->calibrationProfile->file_path)
                 : null,
         ];
 
         $this->validateManifest($manifest);
 
         return $manifest;
+    }
+
+    protected function diskPath(string $disk, string $path): string
+    {
+        if (str_starts_with($path, DIRECTORY_SEPARATOR)) {
+            return $path;
+        }
+
+        return Storage::disk($disk)->path($path);
     }
 
     protected function normalizeAnalysisParams(array $params): array
