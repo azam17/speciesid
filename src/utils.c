@@ -1,7 +1,15 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "utils.h"
 #include <stdarg.h>
 #include <time.h>
 #include <sys/stat.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 /* --- Memory allocation --- */
 
