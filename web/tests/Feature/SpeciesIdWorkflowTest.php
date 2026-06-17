@@ -109,6 +109,14 @@ class SpeciesIdWorkflowTest extends TestCase
             'status' => 'pending',
             'label' => 'Unlabeled sample run',
             'marker_panel' => ['16S'],
+            'analysis_params' => [
+                'detection_threshold' => '0.001',
+                'n_bootstrap' => '0',
+                'control_adjustment' => '1',
+            ],
+            'run_metadata' => [
+                'pcr_cycles' => '35',
+            ],
         ]);
 
         Sample::create([
@@ -131,6 +139,10 @@ class SpeciesIdWorkflowTest extends TestCase
         $this->assertArrayNotHasKey('notes', $manifest['samples'][0]['metadata']);
         $this->assertSame(['beef'], $manifest['samples'][0]['metadata']['claimed_species']);
         $this->assertSame('sample_1', $manifest['samples'][0]['sample_id']);
+        $this->assertSame(0.001, $manifest['analysis_params']['detection_threshold']);
+        $this->assertSame(0, $manifest['analysis_params']['n_bootstrap']);
+        $this->assertTrue($manifest['analysis_params']['control_adjustment']);
+        $this->assertSame(35, $manifest['run_metadata']['pcr_cycles']);
     }
 
     public function test_engine_rejects_schema_invalid_results(): void

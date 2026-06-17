@@ -49,8 +49,12 @@ class SpeciesIDEngine
             return $manifestSample;
         })->toArray();
 
-        $analysisParams = $this->cleanManifestValue($run->analysis_params ?? []);
-        $runMetadata = $this->cleanManifestValue($run->run_metadata ?? []);
+        $analysisParams = $this->normalizeAnalysisParams(
+            $this->cleanManifestValue($run->analysis_params ?? [])
+        );
+        $runMetadata = $this->normalizeRunMetadata(
+            $this->cleanManifestValue($run->run_metadata ?? [])
+        );
         if ($analysisParams === []) {
             $analysisParams = new \stdClass;
         }
@@ -77,6 +81,38 @@ class SpeciesIDEngine
         $this->validateManifest($manifest);
 
         return $manifest;
+    }
+
+    protected function normalizeAnalysisParams(array $params): array
+    {
+        if (array_key_exists('detection_threshold', $params)) {
+            $params['detection_threshold'] = (float) $params['detection_threshold'];
+        }
+
+        if (array_key_exists('prune_threshold', $params)) {
+            $params['prune_threshold'] = (float) $params['prune_threshold'];
+        }
+
+        if (array_key_exists('n_bootstrap', $params)) {
+            $params['n_bootstrap'] = (int) $params['n_bootstrap'];
+        }
+
+        foreach (['control_adjustment', 'out_of_panel_check', 'resolvability_check'] as $key) {
+            if (array_key_exists($key, $params)) {
+                $params[$key] = filter_var($params[$key], FILTER_VALIDATE_BOOL);
+            }
+        }
+
+        return $params;
+    }
+
+    protected function normalizeRunMetadata(array $metadata): array
+    {
+        if (array_key_exists('pcr_cycles', $metadata)) {
+            $metadata['pcr_cycles'] = (int) $metadata['pcr_cycles'];
+        }
+
+        return $metadata;
     }
 
     protected function cleanManifestValue(mixed $value): mixed

@@ -72,12 +72,22 @@ class UploadController extends Controller
             'label' => $validated['label'] ?? ('Run '.now()->format('Y-m-d H:i')),
             'marker_panel' => $validated['marker_panel'],
             'analysis_params' => [
-                'detection_threshold' => $validated['detection_threshold'] ?? 0.001,
-                'n_bootstrap' => $validated['n_bootstrap'] ?? 0,
+                'detection_threshold' => isset($validated['detection_threshold'])
+                    ? (float) $validated['detection_threshold']
+                    : 0.001,
+                'n_bootstrap' => isset($validated['n_bootstrap'])
+                    ? (int) $validated['n_bootstrap']
+                    : 0,
                 'read_mode' => $validated['read_mode'] ?? 'auto',
-                'control_adjustment' => $validated['control_adjustment'] ?? true,
-                'out_of_panel_check' => $validated['out_of_panel_check'] ?? true,
-                'resolvability_check' => $validated['resolvability_check'] ?? true,
+                'control_adjustment' => isset($validated['control_adjustment'])
+                    ? (bool) $validated['control_adjustment']
+                    : true,
+                'out_of_panel_check' => isset($validated['out_of_panel_check'])
+                    ? (bool) $validated['out_of_panel_check']
+                    : true,
+                'resolvability_check' => isset($validated['resolvability_check'])
+                    ? (bool) $validated['resolvability_check']
+                    : true,
             ],
             'run_metadata' => [
                 'operator' => $validated['operator'] ?? null,
